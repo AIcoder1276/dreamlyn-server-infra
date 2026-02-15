@@ -1,0 +1,178 @@
+services:
+    # Services.
+    ## Main server gate. It is used for routing upcoming requests.
+    server:
+        restart: on-failure:5
+        image: nginx:latest
+        container_name: svc-server
+        ports:
+            - "80:80"
+            - "443:443"
+        environment:
+            - DOMAIN=${CERT_DOMAIN}
+        volumes:
+            - ./Services/Server/Logs:/var/log/nginx
+            - ./Services/Server/Config/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+            - certbot_data:/etc/letsencrypt
+        networks:
+            - server_network
+    ## Auth service.
+    authelia:
+        image: authelia/authelia:latest
+        restart: on-failure:5
+        container_name: svc-auth_manager
+        volumes:
+            - ./Services/Auth:/config
+        networks:
+            - server_network
+        environment:
+            - TZ=UTC
+    ## Token manager.
+    ### Manager DB.
+    token-storage:
+        restart: on-failure:5
+        image: postgres:18-alpine
+        container_name: svc-token-storage
+        environment:
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_NAME}
+        volumes:
+            - ./Services/Token/Storage/Postgres:/var/lib/postgresql/data
+        networks:
+            - server_network
+    ### Control panel.
+    token-manager:
+        restart: on-failure:5
+        image: ghcr.io/berriai/litellm:main-latest
+        container_name: svc-token-manager
+        depends_on:
+            - token-storage
+        volumes:
+            - ./Services/Token/Manager/config.yaml:/app/config.yaml
+        ports:
+            - "4000:4000"
+        env_file: .env
+        command: ["--config", "/app/config.yaml"]
+        networks:
+            - server_network
+    ## File storage system.
+    ### Master service.
+    swfs-master:
+        restart: on-failure:5
+        image: chrislusf/seaweedfs:latest
+        container_name: svc-file-storage_master
+        command: "master -ip=swfs-master"
+        networks:
+            - server_network
+    ### Volume service.
+    swfs-volume:
+        restart: on-failure:5
+        image: chrislusf/seaweedfs:latest
+        container_name: svc-file-storage_volume
+        depends_on:
+            - swfs-master
+        volumes:
+            - ./Services/Storage/Seaweed/Data:/data
+        command: "volume -mserver=swfs-master:9333 -port=8080 -ip=swfs-volume -dir=/data"
+        networks:
+            - server_network
+    ### FS wrapper service.
+    swfs-filer:
+        restart: on-failure:5
+        image: chrislusf/seaweedfs:latest
+        container_name: svc-file-storage_filer
+        depends_on:
+            - swfs-master
+            - swfs-volume
+        ports:
+            - "8888:8888"
+        command: "filer -master=swfs-master:9333"
+        networks:
+            - server_network
+    ### S3 subsystem.
+    swfs-s3:
+        restart: on-failure:5
+        image: chrislusf/seaweedfs:latest
+        container_name: svc-file-storage_s3
+        depends_on:
+            - swfs-filer
+        ports:
+            - "8333:8333"
+        environment:
+            - SEAWEEDFS_S3_ALLOWED_DOMAINS=${CERT_DOMAIN}
+        volumes:
+            - ./Services/Storage/Seaweed/config/s3.json:/etc/seaweedfs/s3.json
+        command: 's3 -filer="swfs-filer:8888" -config=/etc/seaweedfs/s3.json'
+        networks:
+            - server_network
+    
+    # Apps.
+    ## Landing page.
+    landing:
+        restart: on-failure:5
+        image: nginx:alpine
+        container_name: app-landing_page
+        volumes:
+            - ./Apps/Landing:/usr/share/nginx/html:ro
+        networks:
+            - server_network
+    ## Project management system.
+    youtrack:
+        restart: on-failure:5
+        image: jetbrains/youtrack:2025.3.119807
+        container_name: app-jetbrains_youtrack
+        volumes:
+            - ./Apps/YouTrack/Data:/opt/youtrack/data
+            - ./Apps/YouTrack/Conf:/opt/youtrack/conf
+            - ./Apps/YouTrack/Logs:/opt/youtrack/logs
+            - ./Apps/YouTrack/Temp:/opt/youtrack/temp
+            - ./Apps/YouTrack/Backups:/opt/youtrack/backups
+        networks:
+            - server_network
+        environment:
+            - YOUTRACK_BASE_URL=http://track.dreamlyn.ru
+
+    # AI.
+    ## General AI service (for talking, common games and so on).
+    ai-general:
+        restart: on-failure:5
+        image: vllm/vllm-openai:latest
+        container_name: ai-general-qwen2.5_7b
+        ipc: host
+        gpus: all
+        volumes:
+            - ./AI/Models/General/HF_Cache:/root/.cache/huggingface
+        environment:
+            - NVIDIA_VISIBLE_DEVICES=all
+        command: >
+            --model Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4
+            --max-model-len 2048
+            --gpu-memory-utilization 0.5
+            --enforce-eager
+        networks:
+            - server_network
+
+    # Misc.
+    ## Certbot utility.
+    ### certbot:
+    ###    image: certbot/certbot
+    ###    container_name: msc-certbot
+    ###    volumes:
+    ###        - certbot_data:/etc/letsencrypt
+    ###    command: >
+    ###        certonly --manual
+    ###        --preferred-challenges dns
+    ###        --agree-tos
+    ###        --email ${CERT_ADMIN_EMAIL}
+    ###        -d "${CERT_DOMAIN}"
+    ###        -d "*.${CERT_DOMAIN}"
+
+
+volumes:
+    certbot_data:
+
+
+networks:
+    server_network:
+        driver: bridge

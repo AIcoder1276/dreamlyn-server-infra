@@ -1,0 +1,33 @@
+server:
+  host: 0.0.0.0
+  port: 9091
+
+authentication_backend:
+  file:
+    path: /config/data/users_database.yml
+
+storage:
+  encryption_key: "{very_very_long_string_for_encryption_purposes}"
+  local:
+    path: /config/data/db.sqlite3
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain: "{sub_domain}.{domain}.{domain_zone}"
+      policy: two_factor
+
+session:
+  name: authelia_session
+  domain: "{domain}.{domain_zone}"
+  secret: "{very_long_string_with_numbers}"
+  expiration: 3600
+
+notifier:
+  filesystem:
+    filename: /config/notification.txt
+
+jwt_secret: "{another_very_long_string}"
+default_2fa_method: "totp"
+totp:
+  issuer: "{some_name}"

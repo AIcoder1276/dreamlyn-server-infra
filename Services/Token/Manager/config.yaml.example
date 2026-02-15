@@ -1,0 +1,11 @@
+model_list:
+    - model_name: {ACTUAL_MODEL_NAME}
+      litellm_params:
+        model: {MODEL_VALUE}
+        api_base: http://ai-general:8000/v1
+        api_key: "not-needed-locally"
+
+general_settings:
+    disable_ui: false
+    database_url: "os.environ/DB_URL"
+    master_key: "os.environ/LITELLM_MASTER_KEY"

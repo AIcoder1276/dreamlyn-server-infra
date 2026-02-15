@@ -1,0 +1,45 @@
+# HuggingFace AI Models Cache.
+**/HF_Cache**
+# YouTrack Data.
+**/YouTrack/**
+!**/YouTrack/README.md
+
+# Local-Stored DBs.
+## SQLite.
+*.sqlite
+*.sqlite3
+## PostgreSQL data.
+**/Services/Token/Storage/Postgres**
+
+# Logs.
+**/Logs**
+
+# Notifications from Authelia.
+**/Services/Auth/notification.txt
+
+# SeaweedFS.
+## Stored data.
+**/Services/Storage/Seaweed/Data**
+## S3 config.
+**/Services/Storage/Seaweed/config/s3.json
+
+# Environment Data.
+*.env
+
+# Users Declaration File for Authelia.
+## Use template file instead ("users_database.yml.example")
+**/Services/Auth/data/users_database.yml
+
+# Configuration File for Authelia.
+## Use template file instead ("configuration.yml.example")
+**/Services/Auth/configuration.yml
+
+# Configuration File for LiteLLM.
+## Use template file instead ("config.yaml.example")
+**/Services/Token/Manager/config.yaml
+
+# Windows-Specific Files.
+**/desktop.ini
+
+# macOS-Specific Files.
+**/**.DS_Store
