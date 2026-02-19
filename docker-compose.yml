@@ -147,6 +147,7 @@ services:
             - NVIDIA_VISIBLE_DEVICES=all
         command: >
             --model Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4
+            --served-model-name openai/qwen-general
             --max-model-len 2048
             --gpu-memory-utilization 0.5
             --enforce-eager
