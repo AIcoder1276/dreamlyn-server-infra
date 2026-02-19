@@ -2,7 +2,7 @@ services:
     # Services.
     ## Main server gate. It is used for routing upcoming requests.
     server:
-        restart: on-failure:5
+        restart: unless-stopped
         image: nginx:latest
         container_name: svc-server
         ports:
@@ -19,7 +19,7 @@ services:
     ## Auth service.
     authelia:
         image: authelia/authelia:latest
-        restart: on-failure:5
+        restart: unless-stopped
         container_name: svc-auth_manager
         volumes:
             - ./Services/Auth:/config
@@ -27,29 +27,29 @@ services:
             - server_network
         environment:
             - TZ=UTC
-    ## Token manager.
+    ## API Gateway (for AIs).
     ### Manager DB.
-    token-storage:
-        restart: on-failure:5
+    api-gateway-storage:
+        restart: unless-stopped
         image: postgres:18-alpine
-        container_name: svc-token-storage
+        container_name: svc-api_gateway-storage
         environment:
             - POSTGRES_USER=${DB_USER}
             - POSTGRES_PASSWORD=${DB_PASSWORD}
             - POSTGRES_DB=${DB_NAME}
         volumes:
-            - ./Services/Token/Storage/Postgres:/var/lib/postgresql/data
+            - ./Services/Gateway/Storage/Postgres:/var/lib/postgresql/data
         networks:
             - server_network
     ### Control panel.
-    token-manager:
-        restart: on-failure:5
+    api-gateway-manager:
+        restart: unless-stopped
         image: ghcr.io/berriai/litellm:main-latest
-        container_name: svc-token-manager
+        container_name: svc-api_gateway-manager
         depends_on:
-            - token-storage
+            - api-gateway-storage
         volumes:
-            - ./Services/Token/Manager/config.yaml:/app/config.yaml
+            - ./Services/Gateway/Manager/config.yaml:/app/config.yaml
         ports:
             - "4000:4000"
         env_file: .env
@@ -59,7 +59,7 @@ services:
     ## File storage system.
     ### Master service.
     swfs-master:
-        restart: on-failure:5
+        restart: unless-stopped
         image: chrislusf/seaweedfs:latest
         container_name: svc-file-storage_master
         command: "master -ip=swfs-master"
@@ -67,7 +67,7 @@ services:
             - server_network
     ### Volume service.
     swfs-volume:
-        restart: on-failure:5
+        restart: unless-stopped
         image: chrislusf/seaweedfs:latest
         container_name: svc-file-storage_volume
         depends_on:
@@ -79,7 +79,7 @@ services:
             - server_network
     ### FS wrapper service.
     swfs-filer:
-        restart: on-failure:5
+        restart: unless-stopped
         image: chrislusf/seaweedfs:latest
         container_name: svc-file-storage_filer
         depends_on:
@@ -92,7 +92,7 @@ services:
             - server_network
     ### S3 subsystem.
     swfs-s3:
-        restart: on-failure:5
+        restart: unless-stopped
         image: chrislusf/seaweedfs:latest
         container_name: svc-file-storage_s3
         depends_on:
@@ -110,7 +110,7 @@ services:
     # Apps.
     ## Landing page.
     landing:
-        restart: on-failure:5
+        restart: unless-stopped
         image: nginx:alpine
         container_name: app-landing_page
         volumes:
@@ -119,7 +119,7 @@ services:
             - server_network
     ## Project management system.
     youtrack:
-        restart: on-failure:5
+        restart: unless-stopped
         image: jetbrains/youtrack:2025.3.119807
         container_name: app-jetbrains_youtrack
         volumes:
@@ -136,7 +136,7 @@ services:
     # AI.
     ## General AI service (for talking, common games and so on).
     ai-general:
-        restart: on-failure:5
+        restart: unless-stopped
         image: vllm/vllm-openai:latest
         container_name: ai-general-qwen2.5_7b
         ipc: host

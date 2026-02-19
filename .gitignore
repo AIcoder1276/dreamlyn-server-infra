@@ -9,7 +9,7 @@
 *.sqlite
 *.sqlite3
 ## PostgreSQL data.
-**/Services/Token/Storage/Postgres**
+**/Services/Gateway/Storage/Postgres**
 
 # Logs.
 **/Logs**
@@ -34,9 +34,9 @@
 ## Use template file instead ("configuration.yml.example")
 **/Services/Auth/configuration.yml
 
-# Configuration File for LiteLLM.
+# Configuration File for LiteLLM (AI API gateway).
 ## Use template file instead ("config.yaml.example")
-**/Services/Token/Manager/config.yaml
+**/Services/Gateway/Manager/config.yaml
 
 # Windows-Specific Files.
 **/desktop.ini

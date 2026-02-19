@@ -131,16 +131,16 @@ server {
 }
 
 # AI Settings.
-## Settings for General AI.
+## Gateway for AI (panel and API).
 server {
     listen 443 ssl;
-    server_name general-ai.${DOMAIN};
+    server_name api-ai.${DOMAIN};
 
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
 
     location / {
-        proxy_pass http://token-manager:4000;
+        proxy_pass http://api-gateway-manager:4000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-Proto https;
