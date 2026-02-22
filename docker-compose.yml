@@ -147,10 +147,31 @@ services:
             - NVIDIA_VISIBLE_DEVICES=all
         command: >
             --model Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4
-            --served-model-name openai/qwen-general
+            --served-model-name qwen2.5-general
             --max-model-len 2048
             --gpu-memory-utilization 0.5
             --enforce-eager
+        networks:
+            - server_network
+        ## Vision AI service (for processing images).
+    ai-vision:
+        restart: unless-stopped
+        image: vllm/vllm-openai:latest
+        container_name: ai-vision-qwen2_vl
+        ipc: host
+        runtime: nvidia
+        gpus: all
+        volumes:
+            - ./AI/Models/Vision/HF_Cache:/root/.cache/huggingface
+        environment:
+            - NVIDIA_VISIBLE_DEVICES=all
+        command: >
+            --model Qwen/Qwen2-VL-7B-Instruct-AWQ
+            --served-model-name qwen2-vl
+            --max-model-len 4096
+            --gpu-memory-utilization 0.45
+            --trust-remote-code
+            --limit-mm-per-prompt image=4
         networks:
             - server_network
 
