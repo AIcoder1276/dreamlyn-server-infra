@@ -138,26 +138,28 @@ services:
     ai-general:
         restart: unless-stopped
         image: vllm/vllm-openai:latest
-        container_name: ai-general-qwen2.5_7b
+        container_name: ai-general-qwen3_4b
         ipc: host
         gpus: all
+        ulimits:
+            memlock: -1
         volumes:
             - ./AI/Models/General/HF_Cache:/root/.cache/huggingface
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
         command: >
-            --model Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4
-            --served-model-name qwen2.5-general
+            Qwen/Qwen3-4B-FP8
+            --served-model-name General-Main
             --max-model-len 2048
-            --gpu-memory-utilization 0.5
+            --gpu-memory-utilization 0.4
             --enforce-eager
         networks:
             - server_network
-        ## Vision AI service (for processing images).
+    ## Vision AI service (for processing images).
     ai-vision:
         restart: unless-stopped
         image: vllm/vllm-openai:latest
-        container_name: ai-vision-qwen2_vl
+        container_name: ai-vision-qwen3_vl_2b
         ipc: host
         runtime: nvidia
         gpus: all
@@ -165,13 +167,17 @@ services:
             - ./AI/Models/Vision/HF_Cache:/root/.cache/huggingface
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
+            # To solve troubles with dynamic linking of vLLM/CUDA engine.
+            - LIBRARY_PATH=/usr/local/cuda/lib64/stubs
+            - TRITON_LIBCUDA_PATH=/usr/local/cuda/lib64/stubs
         command: >
-            --model Qwen/Qwen2-VL-7B-Instruct-AWQ
-            --served-model-name qwen2-vl
-            --max-model-len 4096
-            --gpu-memory-utilization 0.45
-            --trust-remote-code
-            --limit-mm-per-prompt image=4
+            Qwen/Qwen3-VL-2B-Instruct-FP8
+            --served-model-name Vision-Main
+            --max-model-len 2048
+            --enable-chunked-prefill
+            --gpu-memory-utilization 0.5
+            --limit-mm-per-prompt '{"image": 1}'
+            --mm-processor-kwargs '{"max_pixels": 314572}'
         networks:
             - server_network
 
