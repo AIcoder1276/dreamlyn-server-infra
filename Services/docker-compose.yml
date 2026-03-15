@@ -1,0 +1,123 @@
+services:
+    # Main server gate. It is used for routing upcoming requests.
+    server:
+        image: nginx:latest
+        container_name: server
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+        environment:
+            - DOMAIN=${CERT_DOMAIN}
+        volumes:
+            - ./Servers/NGINX/Logs:/var/log/nginx
+            - ./Servers/NGINX/Config/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+            - server_certbot_data:/etc/letsencrypt
+        networks:
+            - dreamlyn_infra_internal_network
+
+    # Auth service.
+    authelia:
+        image: authelia/authelia:latest
+        container_name: auth_manager
+        restart: unless-stopped
+        volumes:
+            - ./Auth/Authelia:/config
+        networks:
+            - dreamlyn_infra_internal_network
+        environment:
+            - TZ=UTC
+
+    # Gateways.
+    ## LiteLLM (API for AIs).
+    ### Manager DB.
+    api-gateway-storage:
+        image: postgres:18-alpine
+        container_name: gateway-api_ai-storage
+        restart: unless-stopped
+        environment:
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_NAME}
+        volumes:
+            - ./Gateways/LiteLLM/Storage/Postgres:/var/lib/postgresql/data
+        networks:
+            - dreamlyn_infra_internal_network
+    ### Control panel.
+    api-gateway-manager:
+        image: ghcr.io/berriai/litellm:main-latest
+        container_name: gateway-api_ai-manager
+        restart: unless-stopped
+        depends_on:
+            - api-gateway-storage
+        volumes:
+            - ./Gateways/LiteLLM/Manager/config.yaml:/app/config.yaml
+        ports:
+            - "4000:4000"
+        env_file: .env
+        command: ["--config", "/app/config.yaml"]
+        networks:
+            - dreamlyn_infra_internal_network
+
+    # Storage systems.
+    ## File storage system (with S3).
+    ### Master service.
+    swfs-master:
+        image: chrislusf/seaweedfs:latest
+        container_name: storage-file_storage-master
+        restart: unless-stopped
+        command: "master -ip=swfs-master"
+        networks:
+            - dreamlyn_infra_internal_network
+    ### Volume service.
+    swfs-volume:
+        image: chrislusf/seaweedfs:latest
+        container_name: storage-file_storage-volume
+        restart: unless-stopped
+        depends_on:
+            - swfs-master
+        volumes:
+            - ./Storages/Seaweed/Data:/data
+        command: "volume -mserver=swfs-master:9333 -port=8080 -ip=swfs-volume -dir=/data"
+        networks:
+            - dreamlyn_infra_internal_network
+    ### FS wrapper service.
+    swfs-filer:
+        image: chrislusf/seaweedfs:latest
+        container_name: storage-file_storage-storage_filer
+        restart: unless-stopped
+        depends_on:
+            - swfs-master
+            - swfs-volume
+        ports:
+            - "8888:8888"
+        command: "filer -master=swfs-master:9333"
+        networks:
+            - dreamlyn_infra_internal_network
+    ### S3 subsystem.
+    swfs-s3:
+        image: chrislusf/seaweedfs:latest
+        container_name: storage-file_storage-s3_provider
+        restart: unless-stopped
+        depends_on:
+            - swfs-filer
+        ports:
+            - "8333:8333"
+        environment:
+            - SEAWEEDFS_S3_ALLOWED_DOMAINS=${CERT_DOMAIN}
+        volumes:
+            - ./Storages/Seaweed/config/s3.json:/etc/seaweedfs/s3.json
+        command: 's3 -filer="swfs-filer:8888" -config=/etc/seaweedfs/s3.json'
+        networks:
+            - dreamlyn_infra_internal_network
+
+
+volumes:
+    server_certbot_data:
+        external: true
+
+
+networks:
+  dreamlyn_infra_internal_network:
+    external: true
+    name: dreamlyn_mesh

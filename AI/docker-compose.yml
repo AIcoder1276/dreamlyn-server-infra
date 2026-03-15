@@ -1,0 +1,65 @@
+services:
+    # AI inferences.
+    ## Text AI service (for talking, common games and so on).
+    ai-text-qwen3_4b:
+        image: vllm/vllm-openai:latest
+        container_name: inference-text-qwen3_4b
+        restart: unless-stopped
+        ipc: host
+        gpus: all
+        ulimits:
+            memlock: -1
+        volumes:
+            - ./Models/Text/HF_Cache:/root/.cache/huggingface
+        environment:
+            - NVIDIA_VISIBLE_DEVICES=all
+        command: >
+            Qwen/Qwen3-4B-FP8
+            --served-model-name Qwen3-4B
+            --max-model-len 2048
+            --gpu-memory-utilization 0.4
+            --enforce-eager
+        networks:
+            - dreamlyn_infra_internal_network
+    ## Vision AI service (for processing images).
+    ai-vision-qwen3_vl_2b:
+        image: vllm/vllm-openai:latest
+        container_name: inference-vision-qwen3_vl_2b
+        restart: unless-stopped
+        ipc: host
+        runtime: nvidia
+        gpus: all
+        volumes:
+            - ./Models/Vision/HF_Cache:/root/.cache/huggingface
+        environment:
+            - NVIDIA_VISIBLE_DEVICES=all
+            # To solve troubles with dynamic linking of vLLM/CUDA engine.
+            - LIBRARY_PATH=/usr/local/cuda/lib64/stubs
+            - TRITON_LIBCUDA_PATH=/usr/local/cuda/lib64/stubs
+        command: >
+            Qwen/Qwen3-VL-2B-Instruct-FP8
+            --served-model-name Qwen3-VL-2B
+            --max-model-len 2048
+            --enable-chunked-prefill
+            --gpu-memory-utilization 0.5
+            --limit-mm-per-prompt '{"image": 1}'
+            --mm-processor-kwargs '{"max_pixels": 314572}'
+        networks:
+            - dreamlyn_infra_internal_network
+
+    # AI utils.
+    searxng:
+        image: searxng/searxng:latest
+        container_name: tool-search_engine
+        restart: unless-stopped
+        volumes:
+            - ./Tools/SearXNG/settings.yml:/etc/searxng/settings.yml
+        networks:
+            - dreamlyn_infra_internal_network
+        ports:
+            - "8080:8080"
+
+networks:
+  dreamlyn_infra_internal_network:
+    external: true
+    name: dreamlyn_mesh

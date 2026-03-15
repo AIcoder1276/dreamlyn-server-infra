@@ -1,0 +1,26 @@
+services:
+    # Misc.
+    ## Certbot utility.
+    certbot:
+        image: certbot/certbot
+        container_name: msc-certbot
+        volumes:
+            - server_certbot_data:/etc/letsencrypt
+        command: >
+            certonly --manual
+            --preferred-challenges dns
+            --agree-tos
+            --email ${CERT_ADMIN_EMAIL}
+            -d "${CERT_DOMAIN}"
+            -d "*.${CERT_DOMAIN}"
+
+
+volumes:
+    server_certbot_data:
+        external: true
+
+
+networks:
+  dreamlyn_infra_internal_network:
+    external: true
+    name: dreamlyn_mesh

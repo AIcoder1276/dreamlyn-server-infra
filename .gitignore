@@ -9,37 +9,39 @@
 *.sqlite
 *.sqlite3
 ## PostgreSQL data.
-**/Services/Gateway/Storage/Postgres**
+**/Services/Gateways/LiteLLM/Storage/Postgres**
 
 # Logs.
 **/Logs**
 
 # Notifications from Authelia.
-**/Services/Auth/notification.txt
+**/notification.txt
 
 # SeaweedFS.
 ## Stored data.
-**/Services/Storage/Seaweed/Data**
+**/Services/Storages/Seaweed/Data**
 ## S3 config.
-**/Services/Storage/Seaweed/config/s3.json
+**/Services/Storages/Seaweed/config/s3.json
 
 # Environment Data.
 *.env
 
 # Users Declaration File for Authelia.
 ## Use template file instead ("users_database.yml.example")
-**/Services/Auth/data/users_database.yml
+**/Services/Auth/Authelia/data/users_database.yml
 
 # Configuration File for Authelia.
 ## Use template file instead ("configuration.yml.example")
-**/Services/Auth/configuration.yml
-
-# Configuration File for LiteLLM (AI API gateway).
-## Use template file instead ("config.yaml.example")
-**/Services/Gateway/Manager/config.yaml
+**/Services/Auth/Authelia/configuration.yml
 
 # Windows-Specific Files.
 **/desktop.ini
 
 # macOS-Specific Files.
 **/**.DS_Store
+
+# RAG Service Config.
+**/SearXNG/settings.yml
+
+# Backups Storage.
+**/.bak/**
