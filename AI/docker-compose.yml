@@ -33,9 +33,6 @@ services:
             - ./Models/Vision/HF_Cache:/root/.cache/huggingface
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
-            # To solve troubles with dynamic linking of vLLM/CUDA engine.
-            - LIBRARY_PATH=/usr/local/cuda/lib64/stubs
-            - TRITON_LIBCUDA_PATH=/usr/local/cuda/lib64/stubs
         command: >
             Qwen/Qwen3-VL-2B-Instruct-FP8
             --served-model-name Qwen3-VL-2B
