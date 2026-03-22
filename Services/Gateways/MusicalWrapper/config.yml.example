@@ -1,0 +1,9 @@
+musicgen_api_base: http://ai-music-musicgen_small:8000
+s3_endpoint_url: http://swfs-s3:8333
+s3_region_name: us-east-1
+s3_bucket: dreamlyn-music
+s3_prefix: musicgen
+min_duration_seconds: 5
+max_duration_seconds: 7
+default_duration_seconds: 6
+default_format: wav

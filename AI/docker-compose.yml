@@ -43,6 +43,29 @@ services:
             --mm-processor-kwargs '{"max_pixels": 314572}'
         networks:
             - dreamlyn_infra_internal_network
+    ## Music AI service (for short music generation).
+    ai-music-musicgen_small:
+        build:
+            context: ./Models/Music
+        container_name: inference-music-musicgen_small
+        restart: unless-stopped
+        ipc: host
+        gpus: all
+        volumes:
+            - ./Models/Music/HF_Cache:/app/.cache/huggingface
+        environment:
+            - NVIDIA_VISIBLE_DEVICES=all
+            - HF_HOME=/app/.cache/huggingface
+        command: >
+            facebook/musicgen-small
+            --served-model-name MusicGen-Small
+            --host 0.0.0.0
+            --port 8000
+            --guidance-scale 3.0
+            --max-duration-seconds 30
+            --max-new-tokens-at-max-duration 1503
+        networks:
+            - dreamlyn_infra_internal_network
 
     # AI utils.
     searxng:

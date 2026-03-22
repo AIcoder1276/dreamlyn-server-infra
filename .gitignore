@@ -42,6 +42,10 @@
 
 # RAG Service Config.
 **/SearXNG/settings.yml
+**/Services/Gateways/MusicalWrapper/config.yml
 
 # Backups Storage.
 **/.bak/**
+
+# Python Cache.
+**/__pycache__**
