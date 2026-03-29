@@ -30,7 +30,7 @@ The Musical AI service converts a **plain-text prompt** into a short piece of mu
 - Output: a URL to a generated audio file stored in S3-compatible object storage
 - Supported audio formats: `wav`, `mp3`
 - Configurable duration: 5–7 seconds (default 6 s, as configured in the current deployment)
-- Two response modes: human-readable text (`user`) or structured JSON (`device`)
+- Two response modes: human-readable text (`user`) or machine-readable JSON payload (`device`)
 - Full SSE streaming support
 
 ---
@@ -74,7 +74,7 @@ sequenceDiagram
     Wrapper->>Wrapper: convert WAV → MP3 (if audio_format=mp3)
     Wrapper->>S3: PUT dreamlyn-music/musicgen/YYYY/MM/DD/{uuid}.{ext}
     S3-->>Wrapper: upload confirmed
-    Wrapper-->>LiteLLM: OpenAI chat.completion response (content = URL or structured JSON)
+    Wrapper-->>LiteLLM: OpenAI chat.completion response (content = text or JSON-serialized payload)
     LiteLLM-->>NGINX: forward response
     NGINX-->>Client: HTTPS response
 ```
@@ -338,7 +338,7 @@ Content lines (always present unless noted):
 
 ### 4.5 Response — `output_mode: "device"`
 
-Returns a structured JSON object as the assistant message content. Intended for machine-to-machine integrations where the app needs to programmatically access the URL and metadata.
+Returns the device payload as a JSON-serialized string in the assistant message content. Intended for machine-to-machine integrations where the app needs to programmatically access the URL and metadata while staying compatible with OpenAI/LiteLLM chat response parsing.
 
 **HTTP 200:**
 ```json
@@ -352,15 +352,7 @@ Returns a structured JSON object as the assistant message content. Intended for 
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": {
-          "type": "music_generation",
-          "prompt": "Calm ambient music with a slow piano melody",
-          "url": "http://s3.dreamlyn.ru/musicgen%2F2026%2F03%2F26%2Fabc123def456.wav",
-          "storage_key": "musicgen/2026/03/26/abc123def456.wav",
-          "duration_seconds": 6.0,
-          "format": "wav",
-          "seed": null
-        }
+        "content": "{\"type\":\"music_generation\",\"prompt\":\"Calm ambient music with a slow piano melody\",\"url\":\"http://s3.dreamlyn.ru/musicgen%2F2026%2F03%2F26%2Fabc123def456.wav\",\"storage_key\":\"musicgen/2026/03/26/abc123def456.wav\",\"duration_seconds\":6.0,\"format\":\"wav\",\"seed\":null}"
       },
       "finish_reason": "stop"
     }
@@ -411,7 +403,7 @@ data: {"id":"chatcmpl-...","object":"chat.completion.chunk","created":1743000000
 data: [DONE]
 ```
 
-For `output_mode=device` with streaming, Event 2 content is the JSON-serialized device payload string (i.e., `json.dumps(device_payload)`).
+For `output_mode=device` with streaming, Event 2 content is the same JSON-serialized device payload string used in the non-stream response (i.e., `json.dumps(device_payload)`).
 
 > **Important:** Generation is **not** streamed incrementally. All audio processing and upload happens before any SSE events are sent. The stream is a delivery mechanism only, not a progress stream.
 
@@ -600,7 +592,7 @@ curl -s -X POST https://api-ai.dreamlyn.ru/v1/chat/completions \
       "output_mode": "device",
       "seed": 1337
     }
-  }' | jq '.choices[0].message.content'
+  }' | jq -r '.choices[0].message.content | fromjson'
 ```
 
 **Example parsed content:**
@@ -672,7 +664,7 @@ response = client.chat.completions.create(
     },
 )
 
-# content is a dict when output_mode=device
+# content is a JSON string when output_mode=device
 music = response.choices[0].message.content
 if isinstance(music, str):
     music = json.loads(music)

@@ -437,8 +437,10 @@ async def create_chat_completion(payload: ChatCompletionRequest):
         content: Any = build_user_message(device_payload)
         stream_content = content
     else:
-        content = device_payload
-        stream_content = json.dumps(device_payload)
+        # OpenAI-compatible chat responses expect message.content to be a string.
+        # Device mode preserves the structured payload by serializing it to JSON.
+        content = json.dumps(device_payload)
+        stream_content = content
 
     LOGGER.info("Completed request model=%s storage_key=%s", payload.model, storage_key)
 
