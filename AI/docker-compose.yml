@@ -16,7 +16,7 @@ services:
         command: >
             Qwen/Qwen3-4B-FP8
             --served-model-name Qwen3-4B
-            --max-model-len 2048
+            --max-model-len 4096
             --gpu-memory-utilization 0.4
             --enforce-eager
         networks:
@@ -36,7 +36,7 @@ services:
         command: >
             Qwen/Qwen3-VL-2B-Instruct-FP8
             --served-model-name Qwen3-VL-2B
-            --max-model-len 2048
+            --max-model-len 4096
             --enable-chunked-prefill
             --gpu-memory-utilization 0.5
             --limit-mm-per-prompt '{"image": 1}'
