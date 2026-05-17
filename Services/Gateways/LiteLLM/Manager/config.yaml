@@ -6,18 +6,23 @@ general_settings:
 model_list:
   - model_name: mike
     litellm_params:
-      model: openai/Qwen3-4B
-      api_base: http://ai-text-qwen3_4b:8000/v1
+      model: openai/Qwen3.5-9B
+      api_base: http://ai-multimodal-qwen3.5_9b:8000/v1
       api_key: "not-needed-locally"
   - model_name: diana
     litellm_params:
-      model: openai/Qwen3-VL-2B
-      api_base: http://ai-vision-qwen3_vl_2b:8000/v1
+      model: openai/Qwen3.5-9B
+      api_base: http://ai-multimodal-qwen3.5_9b:8000/v1
       api_key: "not-needed-locally"
   - model_name: timur
     litellm_params:
       model: openai/MusicGen-Small
       api_base: http://api-gateway-musical_wrapper:8000/v1
+      api_key: "not-needed-locally"
+  - model_name: elina
+    litellm_params:
+      model: openai/OmniVoice
+      api_base: http://api-gateway-voice_wrapper:8000/v1
       api_key: "not-needed-locally"
 
 search_tools:

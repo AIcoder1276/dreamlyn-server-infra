@@ -1,0 +1,13 @@
+[project]
+name = "dreamlyn-musicgen-inference"
+version = "0.1.0"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi==0.115.12",
+    "uvicorn[standard]==0.34.0",
+    "numpy==1.26.4",
+    "scipy==1.13.1",
+    "transformers==4.46.3",
+    "sentencepiece==0.2.0",
+    "protobuf==5.29.3",
+]

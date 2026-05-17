@@ -11,24 +11,27 @@ from urllib.parse import quote
 
 import boto3
 import httpx
-import yaml
 from botocore.client import Config
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, ConfigDict, Field
+
+from dto import (
+    APP_NAME,
+    CONFIG_EXAMPLE_PATH,
+    CONFIG_PATH,
+    SUPPORTED_FORMATS,
+    SUPPORTED_OUTPUT_MODES,
+    ChatCompletionRequest,
+    ChatMessage,
+    load_settings,
+)
 
 
-APP_NAME = "musical-wrapper"
-SUPPORTED_FORMATS = {"wav", "mp3"}
-SUPPORTED_OUTPUT_MODES = {"user", "device"}
-LOG_DIR = os.getenv("MUSICAL_LOG_DIR", "/app/Logs")
-LOG_FILE_PATH = os.path.join(LOG_DIR, "musical-wrapper.log")
-CONFIG_PATH = os.getenv("MUSICAL_CONFIG_PATH", "/app/config.yml")
-CONFIG_EXAMPLE_PATH = f"{CONFIG_PATH}.example"
+SETTINGS = load_settings()
 
 
 def configure_logging() -> logging.Logger:
-    os.makedirs(LOG_DIR, exist_ok=True)
+    SETTINGS.log_dir.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger(APP_NAME)
     logger.setLevel(logging.INFO)
     logger.handlers.clear()
@@ -38,7 +41,11 @@ def configure_logging() -> logging.Logger:
         "%Y-%m-%d %H:%M:%S",
     )
 
-    file_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=5 * 1024 * 1024, backupCount=5)
+    file_handler = RotatingFileHandler(
+        SETTINGS.log_dir / "musical-wrapper.log",
+        maxBytes=5 * 1024 * 1024,
+        backupCount=5,
+    )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
@@ -53,64 +60,17 @@ def configure_logging() -> logging.Logger:
 LOGGER = configure_logging()
 
 
-class ChatMessage(BaseModel):
-    role: str
-    content: Any
-
-
-class ChatCompletionRequest(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
-    model: str
-    messages: list[ChatMessage]
-    stream: bool = False
-    user: Optional[str] = None
-    extra_body: dict[str, Any] = Field(default_factory=dict)
-
-
-class MusicalSettings:
-    def __init__(self) -> None:
-        config = self._load_config()
-        self.musicgen_api_base = str(config["musicgen_api_base"]).rstrip("/")
-        self.s3_endpoint_url = str(config["s3_endpoint_url"]).rstrip("/")
-        self.s3_region_name = str(config.get("s3_region_name", "us-east-1"))
-        self.public_base_url = str(os.getenv("S3_STORAGE_PUBLIC_BASE_URL", "")).rstrip("/")
-        if not self.public_base_url:
-            raise RuntimeError("S3_STORAGE_PUBLIC_BASE_URL must be provided via environment variables.")
-        self.s3_access_key = os.getenv("STORAGE_MUSIC_USER_LOGIN")
-        self.s3_secret_key = os.getenv("STORAGE_MUSIC_USER_PASSWORD")
-        if not self.s3_access_key or not self.s3_secret_key:
-            raise RuntimeError("S3 credentials must be provided in '.env' file.")
-        self.s3_bucket = str(config["s3_bucket"])
-        self.s3_prefix = str(config["s3_prefix"])
-        self.min_duration = float(config["min_duration_seconds"])
-        self.max_duration = float(config["max_duration_seconds"])
-        self.default_duration = float(config["default_duration_seconds"])
-        self.default_format = str(config["default_format"]).lower()
-        if self.default_format not in SUPPORTED_FORMATS:
-            raise RuntimeError(f"Unsupported default_format: {self.default_format}")
-        if not self.min_duration <= self.default_duration <= self.max_duration:
-            raise RuntimeError("default_duration_seconds must be within the configured min/max duration bounds.")
-
-    @staticmethod
-    def _load_config() -> dict[str, Any]:
-        config_source = CONFIG_PATH if os.path.exists(CONFIG_PATH) else CONFIG_EXAMPLE_PATH
-        with open(config_source, "r", encoding="utf-8") as config_file:
-            config = yaml.safe_load(config_file)
-        if not isinstance(config, dict):
-            raise RuntimeError(f"Config file {config_source} must contain a YAML mapping.")
-        return config
-
-
-SETTINGS = MusicalSettings()
-
-
 def build_s3_client():
+    s3_access_key = os.getenv(SETTINGS.s3_access_key_env)
+    s3_secret_key = os.getenv(SETTINGS.s3_secret_key_env)
+    if not s3_access_key or not s3_secret_key:
+        raise RuntimeError("S3 credentials must be provided in '.env' file.")
+
     return boto3.client(
         "s3",
         endpoint_url=SETTINGS.s3_endpoint_url,
-        aws_access_key_id=SETTINGS.s3_access_key,
-        aws_secret_access_key=SETTINGS.s3_secret_key,
+        aws_access_key_id=s3_access_key,
+        aws_secret_access_key=s3_secret_key,
         region_name=SETTINGS.s3_region_name,
         config=Config(signature_version="s3v4"),
     )
@@ -391,7 +351,7 @@ async def healthz() -> JSONResponse:
             "musicgen_api_base": SETTINGS.musicgen_api_base,
             "bucket": SETTINGS.s3_bucket,
             "public_base_url": SETTINGS.public_base_url,
-            "config_path": CONFIG_PATH if os.path.exists(CONFIG_PATH) else CONFIG_EXAMPLE_PATH,
+            "config_path": str(CONFIG_PATH if CONFIG_PATH.exists() else CONFIG_EXAMPLE_PATH),
         }
     )
 
@@ -437,8 +397,6 @@ async def create_chat_completion(payload: ChatCompletionRequest):
         content: Any = build_user_message(device_payload)
         stream_content = content
     else:
-        # OpenAI-compatible chat responses expect message.content to be a string.
-        # Device mode preserves the structured payload by serializing it to JSON.
         content = json.dumps(device_payload)
         stream_content = content
 

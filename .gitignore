@@ -42,10 +42,21 @@
 
 # RAG Service Config.
 **/SearXNG/settings.yml
+
+# Wrappers Configs.
+**/Services/Gateways/VoiceWrapper/config.yml
 **/Services/Gateways/MusicalWrapper/config.yml
 
 # Backups Storage.
 **/.bak/**
 
+# Overall Cache Files.
+**/[Cc]ache**
+
 # Python Cache.
 **/__pycache__**
+**/.pytest_cache**
+
+# IDE Files.
+**/.vscode/**
+**/.idea/**

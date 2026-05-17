@@ -2,22 +2,23 @@
 
 Python 3.12+ gateway that accepts OpenAI-style chat completion requests and converts them into MusicGen generation jobs.
 
-## Local venv
+## Local run
 
 ```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn app:app --host 0.0.0.0 --port 8000
+uv sync
+uv run uvicorn --app-dir src app:app --host 0.0.0.0 --port 8000
 ```
 
 ## Required environment
 
-- `MUSICAL_PUBLIC_BASE_URL`
+- `STORAGE_MUSIC_USER_LOGIN`
+- `STORAGE_MUSIC_USER_PASSWORD`
+
+`S3_STORAGE_PUBLIC_BASE_URL` can override `s3.public_base_url` from config.
 
 ## Required config file
 
-Create `config.yml` beside `app.py` from `config.yml.example`.
+Create `config.yml` beside `config.yml.example`.
 
 ## Request options
 

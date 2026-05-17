@@ -1,0 +1,17 @@
+omnivoice_api_base: http://ai-voice-omnivoice:8000
+s3:
+  endpoint: http://swfs-s3:8333
+  region: us-east-1
+  bucket: dreamlyn-voice
+  access_key_env: STORAGE_VOICE_USER_LOGIN
+  secret_key_env: STORAGE_VOICE_USER_PASSWORD
+folders:
+  cache: /app/Cache
+  logs: /app/Logs
+voice:
+  default: amber
+  variants:
+    amber:
+      s3_key: ru-RU/Amber.mp3
+      ref_text: "Replace this with the exact transcript for the Amber reference audio."
+      language: English

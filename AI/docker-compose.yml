@@ -1,58 +1,41 @@
 services:
     # AI inferences.
-    ## Text AI service (for talking, common games and so on).
-    ai-text-qwen3_4b:
+    ## Multimodal AI service (for text and image understanding).
+    ai-multimodal-qwen3.5_9b:
         image: vllm/vllm-openai:latest
-        container_name: inference-text-qwen3_4b
+        container_name: inference-multimodal-qwen3.5_9b
         restart: unless-stopped
         ipc: host
         gpus: all
         ulimits:
             memlock: -1
         volumes:
-            - ./Models/Text/HF_Cache:/root/.cache/huggingface
+            - ./Models/Multimodal/HF_Cache:/root/.cache/huggingface
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
         command: >
-            Qwen/Qwen3-4B-FP8
-            --served-model-name Qwen3-4B
+            cyankiwi/Qwen3.5-9B-AWQ-4bit
+            --served-model-name Qwen3.5-9B
             --max-model-len 4096
-            --gpu-memory-utilization 0.4
+            --gpu-memory-utilization 0.85
             --enforce-eager
-        networks:
-            - dreamlyn_infra_internal_network
-    ## Vision AI service (for processing images).
-    ai-vision-qwen3_vl_2b:
-        image: vllm/vllm-openai:latest
-        container_name: inference-vision-qwen3_vl_2b
-        restart: unless-stopped
-        ipc: host
-        runtime: nvidia
-        gpus: all
-        volumes:
-            - ./Models/Vision/HF_Cache:/root/.cache/huggingface
-        environment:
-            - NVIDIA_VISIBLE_DEVICES=all
-        command: >
-            Qwen/Qwen3-VL-2B-Instruct-FP8
-            --served-model-name Qwen3-VL-2B
-            --max-model-len 4096
             --enable-chunked-prefill
-            --gpu-memory-utilization 0.5
             --limit-mm-per-prompt '{"image": 1}'
             --mm-processor-kwargs '{"max_pixels": 314572}'
+            --reasoning-parser qwen3
+            --generation-config vllm
         networks:
             - dreamlyn_infra_internal_network
     ## Music AI service (for short music generation).
     ai-music-musicgen_small:
         build:
-            context: ./Models/Music
+            context: ./Inference/Audio/Music
         container_name: inference-music-musicgen_small
         restart: unless-stopped
         ipc: host
         gpus: all
         volumes:
-            - ./Models/Music/HF_Cache:/app/.cache/huggingface
+            - ./Models/Audio/Music/HF_Cache:/app/.cache/huggingface
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
             - HF_HOME=/app/.cache/huggingface
@@ -64,6 +47,26 @@ services:
             --guidance-scale 3.0
             --max-duration-seconds 30
             --max-new-tokens-at-max-duration 1503
+        networks:
+            - dreamlyn_infra_internal_network
+    ## Voice AI service (for speech synthesis).
+    ai-voice-omnivoice:
+        build:
+            context: ./Inference/Audio/Voice
+        container_name: inference-voice-omnivoice
+        restart: unless-stopped
+        ipc: host
+        gpus: all
+        volumes:
+            - ./Models/Audio/Voice/HF_Cache:/app/.cache/huggingface
+        environment:
+            - NVIDIA_VISIBLE_DEVICES=all
+            - HF_HOME=/app/.cache/huggingface
+        command: >
+            k2-fsa/OmniVoice
+            --served-model-name OmniVoice
+            --host 0.0.0.0
+            --port 8000
         networks:
             - dreamlyn_infra_internal_network
 

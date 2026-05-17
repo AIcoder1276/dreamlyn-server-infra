@@ -1,0 +1,18 @@
+[project]
+name = "dreamlyn-omnivoice-inference"
+version = "0.1.0"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi==0.115.12",
+    "uvicorn[standard]==0.34.0",
+    "python-multipart==0.0.20",
+    "torch==2.8.0",
+    "torchaudio==2.8.0",
+    "omnivoice",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.5",
+    "httpx==0.28.1",
+]
