@@ -20,17 +20,6 @@ model_list:
           api_base: http://api-gateway-voice_wrapper:8000/v1
           api_key: "not-needed-locally"
 
-    - model_name: mike
-      litellm_params:
-          model: openai/Qwen3.5-9B
-          api_base: http://ai-multimodal-qwen3.5_9b:8000/v1
-          api_key: "not-needed-locally"
-    - model_name: diana
-      litellm_params:
-          model: openai/Qwen3.5-9B
-          api_base: http://ai-multimodal-qwen3.5_9b:8000/v1
-          api_key: "not-needed-locally"
-
 search_tools:
     - search_tool_name: searxng-search
       litellm_params:
