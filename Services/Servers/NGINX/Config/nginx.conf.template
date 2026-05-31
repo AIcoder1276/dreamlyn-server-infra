@@ -1,3 +1,4 @@
+# Global Settings.
 server_names_hash_bucket_size 128;
 
 # Redirection Settings.
@@ -135,6 +136,10 @@ server {
 server {
     listen 443 ssl;
     server_name api-ai.${DOMAIN};
+    
+    client_body_timeout 300s;
+    client_max_body_size 64M;
+    client_body_buffer_size 16M;
 
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
