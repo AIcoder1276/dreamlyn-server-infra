@@ -1,6 +1,5 @@
 server:
-  host: 0.0.0.0
-  port: 9091
+  address: 'tcp://0.0.0.0:9091/'
 
 authentication_backend:
   file:
@@ -19,15 +18,20 @@ access_control:
 
 session:
   name: authelia_session
-  domain: "{domain}.{domain_zone}"
   secret: "{very_long_string_with_numbers}"
   expiration: 3600
+  cookies:
+    - domain: "{domain}.{domain_zone}"
+      authelia_url: "https://auth.{domain}.{domain_zone}"
 
 notifier:
   filesystem:
     filename: /config/notification.txt
 
-jwt_secret: "{another_very_long_string}"
+identity_validation:
+  reset_password:
+    jwt_secret: "{another_very_long_string}"
+
 default_2fa_method: "totp"
 totp:
   issuer: "{some_name}"
