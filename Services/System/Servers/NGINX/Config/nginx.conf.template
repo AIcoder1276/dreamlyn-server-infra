@@ -1,0 +1,219 @@
+# Global Settings.
+server_names_hash_bucket_size 128;
+
+
+# Regular Expressions (for mapping).
+## Map for Authelia Cookies.
+map $http_cookie $cleaned_cookies {
+    "~*^(.*)(?:^|;)\s*authelia_session=[^;]*(.*)$" "$1$2";
+    default $http_cookie; 
+}
+
+
+# Redirection Settings.
+## HTTP 'Not Found' Redirection.
+server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+## HTTPS 'Not Found' Redirection.
+server {
+    listen 443 ssl default_server;
+    server_name _;
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    return 444;
+}
+## Automatic 'HTTP->HTTPS' Redirection.
+server {
+    listen 80;
+    server_name track.${DOMAIN} general-ai.${DOMAIN};
+
+    return 301 https://$host$request_uri;
+}
+
+# Services Settings.
+## Settings for Authelia.
+server {
+    listen 443 ssl;
+    server_name auth.${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    location / {
+        resolver 127.0.0.11 valid=30s;
+        set $authelia_upstream authelia:9091;
+
+        proxy_pass http://authelia:9091;
+
+        proxy_set_header Host $http_host; 
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $http_host;
+    }
+}
+## Settings for SeaWeedFS.
+### Settings for the Filer.
+server {
+    listen 443 ssl;
+    server_name storage.${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    set $upstream_authelia http://authelia:9091/api/verify;
+
+    location / {
+        auth_request /authelia;
+        error_page 401 =302 https://auth.${DOMAIN}/?rd=$scheme://$http_host$request_uri;
+
+        proxy_set_header Cookie $cleaned_cookies;
+        proxy_set_header Host $http_host;
+        proxy_pass http://swfs-filer:8888;
+    }
+
+    location = /authelia {
+        internal;
+        proxy_pass $upstream_authelia;
+        proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Content-Length "";
+        proxy_set_header Connection "";
+    }
+}
+### Settings for API (S3).
+server {
+    listen 443 ssl;
+    server_name s3.${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    client_max_body_size 0;
+
+    location / {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_pass http://swfs-s3:8333;
+    }
+}
+
+# Settings for Milvus Vector Storage.
+## Settings for Admin Panel.
+server {
+    listen 443 ssl;
+    server_name attu.${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    set $upstream_authelia http://authelia:9091/api/verify;
+
+    location / {
+        auth_request /authelia;
+        error_page 401 =302 https://auth.${DOMAIN}/?rd=$scheme://$http_host$request_uri;
+
+        proxy_set_header Cookie $cleaned_cookies;
+        proxy_set_header Host $http_host;
+        proxy_pass http://milvus-webui:3000;
+    }
+
+    location = /authelia {
+        internal;
+        proxy_pass $upstream_authelia;
+        proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Content-Length "";
+        proxy_set_header Connection "";
+    }
+}
+## Settings for API.
+server {
+    listen 443 ssl;
+    server_name api-milvus.${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    client_max_body_size 0;
+
+    location / {
+        # gRPC specific headers
+        grpc_set_header Host $host;
+        grpc_set_header X-Real-IP $remote_addr;
+        grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        grpc_set_header X-Forwarded-Proto $scheme;
+
+        grpc_socket_keepalive on;
+
+        grpc_pass grpc://milvus-master:19530;
+    }
+}
+
+
+# Apps Settings.
+## Settings for Landing Page.
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    location / {
+        proxy_pass http://landing:80;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+## Settings for YouTrack.
+server {
+    listen 443 ssl;
+    server_name track.${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    location / {
+        proxy_pass http://youtrack:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+# AI Settings.
+## Gateway for AI (panel and API).
+server {
+    listen 443 ssl;
+    server_name api-ai.${DOMAIN};
+    
+    client_body_timeout 300s;
+    client_max_body_size 64M;
+    client_body_buffer_size 16M;
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    location / {
+        proxy_pass http://litellm-master:4000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 300;
+    }
+}

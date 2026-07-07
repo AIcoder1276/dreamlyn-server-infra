@@ -1,6 +1,6 @@
 services:
     # AI inferences.
-    ## Multimodal AI service (for text and image understanding).
+    ## Multimodal AI services.
     ai-multimodal-qwen3.5_9b:
         image: vllm/vllm-openai:latest
         container_name: inference-multimodal-qwen3.5_9b
@@ -15,7 +15,7 @@ services:
             - NVIDIA_VISIBLE_DEVICES=all
         command: >
             cyankiwi/Qwen3.5-9B-AWQ-4bit
-            --served-model-name Qwen3.5-9B
+            --served-model-name Qwen/Qwen3.5-9B
             --max-model-len 8192
             --gpu-memory-utilization 0.9
             --kv-cache-dtype fp8
@@ -23,13 +23,15 @@ services:
             --limit-mm-per-prompt '{"image": 1}'
             --mm-processor-kwargs '{"max_pixels": 314572}'
             --reasoning-parser qwen3
+            --tool-call-parser qwen3_coder
+            --enable-auto-tool-choice
             --generation-config vllm
         networks:
             - dreamlyn_infra_internal_network
-    ## Music AI service (for short music generation).
+    ## Music AI services.
     ai-music-musicgen_small:
         build:
-            context: ./Inference/Audio/Music
+            context: ~/source/repos/inference-music
         container_name: inference-music-musicgen_small
         restart: unless-stopped
         ipc: host
@@ -41,7 +43,7 @@ services:
             - HF_HOME=/app/.cache/huggingface
         command: >
             facebook/musicgen-small
-            --served-model-name MusicGen-Small
+            --served-model-name Facebook/MusicGen-Small
             --host 0.0.0.0
             --port 8000
             --guidance-scale 3.0
@@ -49,10 +51,10 @@ services:
             --max-new-tokens-at-max-duration 1503
         networks:
             - dreamlyn_infra_internal_network
-    ## Voice AI service (for speech synthesis).
+    ## Voice AI services (for speech synthesis).
     ai-voice-omnivoice:
         build:
-            context: ./Inference/Audio/Voice
+            context: ~/source/repos/inference-voice
         container_name: inference-voice-omnivoice
         restart: unless-stopped
         ipc: host
@@ -64,13 +66,30 @@ services:
             - HF_HOME=/app/.cache/huggingface
         command: >
             k2-fsa/OmniVoice
-            --served-model-name OmniVoice
+            --served-model-name K2-FSA/OmniVoice
             --host 0.0.0.0
             --port 8000
         networks:
             - dreamlyn_infra_internal_network
+    ## Misc services.
+    ai-embedding-qwen3_emb_0.6b:
+        image: vllm/vllm-openai:latest
+        container_name: inference-embedding-qwen3_emb_0.6b
+        volumes: 
+            - ./Models/Embedding/TEI_Cache:/data
+            - ./Models/Embedding/HF_Cache:/root/.cache/huggingface
+        restart: unless-stopped
+        ipc: host
+        gpus: all
+        command: >
+            Qwen/Qwen3-Embedding-0.6B
+            --served-model-name Qwen/Qwen3-Embedding-0.6B
+            --max-model-len 8192
+            --gpu-memory-utilization 0.15
+        networks:
+            - dreamlyn_infra_internal_network
 
-    # AI utils.
+    ## SearXNG is a search service for Internet data retrieval.
     searxng:
         image: searxng/searxng:latest
         container_name: tool-search_engine
@@ -82,7 +101,8 @@ services:
         ports:
             - "8080:8080"
 
+
 networks:
-  dreamlyn_infra_internal_network:
-    external: true
-    name: dreamlyn_mesh
+    dreamlyn_infra_internal_network:
+        external: true
+        name: dreamlyn_mesh

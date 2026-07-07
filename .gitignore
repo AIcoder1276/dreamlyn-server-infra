@@ -1,38 +1,52 @@
 # HuggingFace AI Models Cache.
-**/HF_Cache**
+**/HF_Cache/**
+!**/HF_Cache/.gitkeep
 # YouTrack Data.
 **/YouTrack/**
 !**/YouTrack/README.md
+!**/YouTrack/.gitkeep
 
 # Local-Stored DBs.
 ## SQLite.
 *.sqlite
 *.sqlite3
 ## PostgreSQL data.
-**/Services/Gateways/LiteLLM/Storage/Postgres**
+**/Services/API/AI/LiteLLM/Postgres/**
+!**/Services/API/AI/LiteLLM/Postgres/.gitkeep
 
 # Logs.
-**/Logs**
+**/Logs/**
+!**/Logs/.gitkeep
 
 # Notifications from Authelia.
 **/notification.txt
 
 # SeaweedFS.
 ## Stored data.
-**/Services/Storages/Seaweed/Data**
+**/Services/Storages/Seaweed/Data/**
+!**/Services/Storages/Seaweed/Data/.gitkeep
 ## S3 config.
 **/Services/Storages/Seaweed/config/s3.json
+
+# Milvus Vector Storage.
+## Stored Data.
+**/Services/Storages/Milvus/ETCD/**
+**/Services/Storages/Milvus/MinIO/**
+**/Services/Storages/Milvus/Master/**
+!**/Services/Storages/Milvus/ETCD/.gitkeep
+!**/Services/Storages/Milvus/MinIO/.gitkeep
+!**/Services/Storages/Milvus/Master/.gitkeep
 
 # Environment Data.
 *.env
 
 # Users Declaration File for Authelia.
 ## Use template file instead ("users_database.yml.example")
-**/Services/Auth/Authelia/data/users_database.yml
+**/Services/System/Auth/Authelia/data/users_database.yml
 
 # Configuration File for Authelia.
 ## Use template file instead ("configuration.yml.example")
-**/Services/Auth/Authelia/configuration.yml
+**/Services/System/Auth/Authelia/configuration.yml
 
 # Windows-Specific Files.
 **/desktop.ini
@@ -40,12 +54,16 @@
 # macOS-Specific Files.
 **/**.DS_Store
 
-# RAG Service Config.
+# SearXNG Service Config.
 **/SearXNG/settings.yml
 
-# Wrappers Configs.
-**/Services/Gateways/VoiceWrapper/config.yml
-**/Services/Gateways/MusicalWrapper/config.yml
+# Adapter Configs.
+**/Services/API/AI/Adapters/Voice/config.yml
+**/Services/API/AI/Adapters/Music/config.yml
+
+# Pipelines Configs.
+## RAG Ingestion Service config file.
+**/RAG/IngestionService/config.yml
 
 # Backups Storage.
 **/.bak/**
