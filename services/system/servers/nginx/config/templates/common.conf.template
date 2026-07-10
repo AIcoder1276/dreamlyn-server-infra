@@ -1,0 +1,12 @@
+# Global settings.
+server_names_hash_bucket_size 128;
+
+# Resolve Docker service names when a request arrives, not when nginx starts.
+resolver 127.0.0.11 valid=30s ipv6=off;
+resolver_timeout 5s;
+
+# Remove the Authelia session cookie before forwarding authenticated requests.
+map $http_cookie $cleaned_cookies {
+    "~*^(.*)(?:^|;)\s*authelia_session=[^;]*(.*)$" "$1$2";
+    default $http_cookie;
+}

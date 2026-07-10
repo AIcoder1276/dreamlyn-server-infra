@@ -1,23 +1,10 @@
-# Global Settings.
-server_names_hash_bucket_size 128;
-
-
-# Regular Expressions (for mapping).
-## Map for Authelia Cookies.
-map $http_cookie $cleaned_cookies {
-    "~*^(.*)(?:^|;)\s*authelia_session=[^;]*(.*)$" "$1$2";
-    default $http_cookie; 
-}
-
-
-# Redirection Settings.
-## HTTP 'Not Found' Redirection.
+# Reject unknown hosts on both ports.
 server {
     listen 80 default_server;
     server_name _;
     return 444;
 }
-## HTTPS 'Not Found' Redirection.
+
 server {
     listen 443 ssl default_server;
     server_name _;
@@ -27,16 +14,24 @@ server {
 
     return 444;
 }
-## Automatic 'HTTP->HTTPS' Redirection.
+
+# Redirect every configured host to HTTPS.
 server {
     listen 80;
-    server_name track.${DOMAIN} general-ai.${DOMAIN};
+    server_name
+        ${DOMAIN}
+        auth.${DOMAIN}
+        storage.${DOMAIN}
+        s3.${DOMAIN}
+        attu.${DOMAIN}
+        api-milvus.${DOMAIN}
+        track.${DOMAIN}
+        api-ai.${DOMAIN};
 
     return 301 https://$host$request_uri;
 }
 
-# Services Settings.
-## Settings for Authelia.
+# Authelia.
 server {
     listen 443 ssl;
     server_name auth.${DOMAIN};
@@ -44,21 +39,21 @@ server {
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
 
+    include /etc/nginx/snippets/service-unavailable.conf;
+
     location / {
-        resolver 127.0.0.11 valid=30s;
         set $authelia_upstream authelia:9091;
+        proxy_pass http://$authelia_upstream;
 
-        proxy_pass http://authelia:9091;
-
-        proxy_set_header Host $http_host; 
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $http_host;
     }
 }
-## Settings for SeaWeedFS.
-### Settings for the Filer.
+
+# SeaweedFS filer.
 server {
     listen 443 ssl;
     server_name storage.${DOMAIN};
@@ -66,20 +61,22 @@ server {
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
 
-    set $upstream_authelia http://authelia:9091/api/verify;
+    include /etc/nginx/snippets/service-unavailable.conf;
+    error_page 401 =302 $scheme://auth.${DOMAIN}/?rd=$scheme://$http_host$request_uri;
 
     location / {
         auth_request /authelia;
-        error_page 401 =302 https://auth.${DOMAIN}/?rd=$scheme://$http_host$request_uri;
 
+        set $filer_upstream swfs-filer:8888;
+        proxy_pass http://$filer_upstream;
         proxy_set_header Cookie $cleaned_cookies;
         proxy_set_header Host $http_host;
-        proxy_pass http://swfs-filer:8888;
     }
 
     location = /authelia {
         internal;
-        proxy_pass $upstream_authelia;
+        set $authelia_verify_upstream authelia:9091;
+        proxy_pass http://$authelia_verify_upstream/api/verify;
         proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -87,28 +84,30 @@ server {
         proxy_set_header Connection "";
     }
 }
-### Settings for API (S3).
+
+# SeaweedFS S3 API.
 server {
     listen 443 ssl;
     server_name s3.${DOMAIN};
 
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
-
     client_max_body_size 0;
 
+    include /etc/nginx/snippets/service-unavailable.conf;
+
     location / {
+        set $s3_upstream swfs-s3:8333;
+        proxy_pass http://$s3_upstream;
+
         proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
-        proxy_pass http://swfs-s3:8333;
     }
 }
 
-# Settings for Milvus Vector Storage.
-## Settings for Admin Panel.
+# Milvus administration panel.
 server {
     listen 443 ssl;
     server_name attu.${DOMAIN};
@@ -116,20 +115,22 @@ server {
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
 
-    set $upstream_authelia http://authelia:9091/api/verify;
+    include /etc/nginx/snippets/service-unavailable.conf;
+    error_page 401 =302 $scheme://auth.${DOMAIN}/?rd=$scheme://$http_host$request_uri;
 
     location / {
         auth_request /authelia;
-        error_page 401 =302 https://auth.${DOMAIN}/?rd=$scheme://$http_host$request_uri;
 
+        set $attu_upstream milvus-webui:3000;
+        proxy_pass http://$attu_upstream;
         proxy_set_header Cookie $cleaned_cookies;
         proxy_set_header Host $http_host;
-        proxy_pass http://milvus-webui:3000;
     }
 
     location = /authelia {
         internal;
-        proxy_pass $upstream_authelia;
+        set $authelia_verify_upstream authelia:9091;
+        proxy_pass http://$authelia_verify_upstream/api/verify;
         proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -137,32 +138,32 @@ server {
         proxy_set_header Connection "";
     }
 }
-## Settings for API.
+
+# Milvus gRPC API.
 server {
     listen 443 ssl;
+    http2 on;
     server_name api-milvus.${DOMAIN};
 
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
-
     client_max_body_size 0;
 
+    include /etc/nginx/snippets/service-unavailable.conf;
+
     location / {
-        # gRPC specific headers
+        set $milvus_upstream milvus-master:19530;
+        grpc_pass grpc://$milvus_upstream;
+
         grpc_set_header Host $host;
         grpc_set_header X-Real-IP $remote_addr;
         grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         grpc_set_header X-Forwarded-Proto $scheme;
-
         grpc_socket_keepalive on;
-
-        grpc_pass grpc://milvus-master:19530;
     }
 }
 
-
-# Apps Settings.
-## Settings for Landing Page.
+# Landing page.
 server {
     listen 443 ssl;
     server_name ${DOMAIN};
@@ -170,15 +171,20 @@ server {
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
 
+    include /etc/nginx/snippets/service-unavailable.conf;
+
     location / {
-        proxy_pass http://landing:80;
+        set $landing_upstream landing:80;
+        proxy_pass http://$landing_upstream;
 
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
-## Settings for YouTrack.
+
+# YouTrack.
 server {
     listen 443 ssl;
     server_name track.${DOMAIN};
@@ -186,33 +192,40 @@ server {
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
 
+    include /etc/nginx/snippets/service-unavailable.conf;
+
     location / {
-        proxy_pass http://youtrack:8080;
+        set $youtrack_upstream youtrack:8080;
+        proxy_pass http://$youtrack_upstream;
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
 
-# AI Settings.
-## Gateway for AI (panel and API).
+# LiteLLM gateway and API.
 server {
     listen 443 ssl;
     server_name api-ai.${DOMAIN};
-    
-    client_body_timeout 300s;
-    client_max_body_size 64M;
-    client_body_buffer_size 16M;
 
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
 
+    client_body_timeout 300s;
+    client_max_body_size 64M;
+    client_body_buffer_size 16M;
+
+    include /etc/nginx/snippets/service-unavailable.conf;
+
     location / {
-        proxy_pass http://litellm-master:4000;
+        set $litellm_upstream litellm-master:4000;
+        proxy_pass http://$litellm_upstream;
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_read_timeout 300;
     }
