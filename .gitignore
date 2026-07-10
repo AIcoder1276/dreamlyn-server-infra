@@ -23,8 +23,8 @@
 
 # SeaweedFS.
 ## Stored data.
-**/services/storages/seaweed/data/**
-!**/services/storages/seaweed/data/.gitkeep
+**/services/storages/seaweed/volume/**
+!**/services/storages/seaweed/volume/.gitkeep
 ## Master state.
 **/services/storages/seaweed/master/**
 !**/services/storages/seaweed/master/.gitkeep
@@ -32,7 +32,7 @@
 **/services/storages/seaweed/filer/**
 !**/services/storages/seaweed/filer/.gitkeep
 ## S3 config.
-**/services/storages/seaweed/config/s3.json
+**/services/storages/seaweed/s3.json
 
 # Milvus Vector Storage.
 ## Stored Data.

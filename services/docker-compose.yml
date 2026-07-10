@@ -119,7 +119,7 @@ services:
         depends_on:
             - swfs-master
         volumes:
-            - ./storages/seaweed/data:/data
+            - ./storages/seaweed/volume:/data
         command: >
             volume 
             -mserver=swfs-master:9333 
