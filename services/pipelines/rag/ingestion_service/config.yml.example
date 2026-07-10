@@ -1,0 +1,23 @@
+s3:
+  bucket: dreamlyn-lore
+  prefix: ""
+  region: us-east-1
+  verify_tls: true
+
+sync:
+  interval_seconds: 10800
+  embedding_batch_size: 32
+  supported_extensions:
+    - .docx
+    - .txt
+    - .md
+    - .pdf
+  ingestion_namespace: dreamlyn_lore
+
+chunking:
+  chunk_size: 1024
+  chunk_overlap: 200
+
+service:
+  host: 0.0.0.0
+  port: 8000
