@@ -15,7 +15,8 @@ services:
             cyankiwi/Qwen3.5-9B-AWQ-4bit
             --served-model-name Qwen/Qwen3.5-9B
             --max-model-len 8192
-            --gpu-memory-utilization 0.9
+            --gpu-memory-utilization 0.65
+            --cpu-offload-gb 6
             --kv-cache-dtype fp8
             --enable-chunked-prefill
             --limit-mm-per-prompt '{"image": 1}'
@@ -77,6 +78,7 @@ services:
             --served-model-name Qwen/Qwen3-Embedding-0.6B
             --max-model-len 8192
             --gpu-memory-utilization 0.15
+            --cpu-offload-gb 0.5
         networks:
             - dreamlyn_infra_internal_network
 
