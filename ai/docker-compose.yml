@@ -14,9 +14,10 @@ services:
         command: >
             cyankiwi/Qwen3.5-9B-AWQ-4bit
             --served-model-name Qwen/Qwen3.5-9B
-            --max-model-len 8192
-            --gpu-memory-utilization 0.65
+            --max-model-len 4096
+            --gpu-memory-utilization 0.48
             --cpu-offload-gb 8
+            --enforce-eager
             --kv-cache-dtype fp8
             --enable-chunked-prefill
             --limit-mm-per-prompt '{"image": 1}'
