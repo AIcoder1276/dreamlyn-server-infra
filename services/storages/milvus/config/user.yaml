@@ -1,0 +1,5 @@
+# The bundled etcd service does not enable authentication. This setting is
+# independent from Milvus client authorization configured in Compose.
+etcd:
+    auth:
+        enabled: false

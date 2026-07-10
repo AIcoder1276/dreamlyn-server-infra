@@ -178,11 +178,17 @@ services:
             -advertise-client-urls=http://milvus-etcd:2379 
             -listen-client-urls http://0.0.0.0:2379 
             --data-dir /etcd
+        healthcheck:
+            test: ["CMD", "etcdctl", "endpoint", "health"]
+            interval: 30s
+            timeout: 20s
+            retries: 3
         networks:
             - dreamlyn_infra_internal_network
     milvus-minio:
         image: minio/minio:RELEASE.2024-12-18T13-15-44Z
         container_name: storage-milvus-minio
+        restart: unless-stopped
         environment:
             MINIO_ACCESS_KEY: minioadmin
             MINIO_SECRET_KEY: minioadmin
@@ -192,25 +198,41 @@ services:
             minio server 
             /minio_data 
             --console-address ":9001"
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            interval: 30s
+            timeout: 20s
+            retries: 3
         networks:
             - dreamlyn_infra_internal_network
     milvus-master:
         image: milvusdb/milvus:v3.0-beta
         container_name: storage-milvus-master
+        restart: unless-stopped
         command: ["milvus", "run", "standalone"]
         security_opt:
           - seccomp:unconfined
         environment:
             ETCD_ENDPOINTS: milvus-etcd:2379
             MINIO_ADDRESS: milvus-minio:9000
+            MINIO_REGION: us-east-1
             MQ_TYPE: woodpecker
             COMMON_SECURITY_AUTHORIZATIONENABLED: true
             COMMON_SECURITY_DEFAULTROOTPASSWORD: ${MILVUS_ROOT_PASSWORD}
         volumes:
             - ./storages/milvus/master:/var/lib/milvus
+            - ./storages/milvus/config/user.yaml:/milvus/configs/user.yaml:ro
         depends_on:
-            - milvus-etcd
-            - milvus-minio
+            milvus-etcd:
+                condition: service_healthy
+            milvus-minio:
+                condition: service_healthy
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+            interval: 30s
+            start_period: 90s
+            timeout: 20s
+            retries: 3
         expose:
           - 19530
         networks:
@@ -222,7 +244,8 @@ services:
             - MILVUS_ADDRESS=milvus-master:19530
             - MILVUS_TOKEN=root:${MILVUS_ROOT_PASSWORD}
         depends_on:
-            - milvus-master
+            milvus-master:
+                condition: service_healthy
         networks:
             - dreamlyn_infra_internal_network
 
