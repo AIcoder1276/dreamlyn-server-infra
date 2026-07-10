@@ -25,6 +25,12 @@
 ## Stored data.
 **/services/storages/seaweed/data/**
 !**/services/storages/seaweed/data/.gitkeep
+## Master state.
+**/services/storages/seaweed/master/**
+!**/services/storages/seaweed/master/.gitkeep
+## Filer metadata.
+**/services/storages/seaweed/filer/**
+!**/services/storages/seaweed/filer/.gitkeep
 ## S3 config.
 **/services/storages/seaweed/config/s3.json
 

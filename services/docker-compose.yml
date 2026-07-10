@@ -101,11 +101,14 @@ services:
         image: chrislusf/seaweedfs:latest
         container_name: storage-seaweed-master
         restart: unless-stopped
+        volumes:
+            - ./storages/seaweed/master:/data
         command: >
             master
             -ip=swfs-master
             -ip.bind=0.0.0.0
             -port=9333
+            -mdir=/data
         networks:
             - dreamlyn_infra_internal_network
     ### Volume service.
@@ -134,11 +137,14 @@ services:
         depends_on:
             - swfs-master
             - swfs-volume
+        volumes:
+            - ./storages/seaweed/filer:/data
         command: >
             filer 
             -master=swfs-master:9333
             -ip=swfs-filer
             -ip.bind=0.0.0.0
+            -defaultStoreDir=/data
         expose:
             - 8888
         networks:
