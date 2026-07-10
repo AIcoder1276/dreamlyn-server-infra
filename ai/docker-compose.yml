@@ -9,8 +9,6 @@ services:
         gpus: all
         ulimits:
             memlock: -1
-        volumes:
-            - ./Models/Multimodal/HF_Cache:/root/.cache/huggingface
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
         command: >
@@ -31,13 +29,11 @@ services:
     ## Music AI services.
     ai-music-musicgen_small:
         build:
-            context: ~/source/repos/inference-music
+            context: ~/Source/repos/inference-music
         container_name: inference-music-musicgen_small
         restart: unless-stopped
         ipc: host
         gpus: all
-        volumes:
-            - ./Models/Audio/Music/HF_Cache:/app/.cache/huggingface
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
             - HF_HOME=/app/.cache/huggingface
@@ -54,13 +50,11 @@ services:
     ## Voice AI services (for speech synthesis).
     ai-voice-omnivoice:
         build:
-            context: ~/source/repos/inference-voice
+            context: ~/Source/repos/inference-voice
         container_name: inference-voice-omnivoice
         restart: unless-stopped
         ipc: host
         gpus: all
-        volumes:
-            - ./Models/Audio/Voice/HF_Cache:/app/.cache/huggingface
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
             - HF_HOME=/app/.cache/huggingface
@@ -75,9 +69,6 @@ services:
     ai-embedding-qwen3_emb_0.6b:
         image: vllm/vllm-openai:latest
         container_name: inference-embedding-qwen3_emb_0.6b
-        volumes: 
-            - ./Models/Embedding/TEI_Cache:/data
-            - ./Models/Embedding/HF_Cache:/root/.cache/huggingface
         restart: unless-stopped
         ipc: host
         gpus: all
@@ -95,7 +86,7 @@ services:
         container_name: tool-search_engine
         restart: unless-stopped
         volumes:
-            - ./Tools/SearXNG/settings.yml:/etc/searxng/settings.yml
+            - ./tools/searxng/settings.yml:/etc/searxng/settings.yml
         networks:
             - dreamlyn_infra_internal_network
         ports:

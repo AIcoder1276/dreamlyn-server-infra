@@ -1,52 +1,52 @@
 # HuggingFace AI Models Cache.
-**/HF_Cache/**
-!**/HF_Cache/.gitkeep
+**/hf_cache/**
+!**/hf_cache/.gitkeep
 # YouTrack Data.
-**/YouTrack/**
-!**/YouTrack/README.md
-!**/YouTrack/.gitkeep
+**/youtrack/**
+!**/youtrack/README.md
+!**/youtrack/.gitkeep
 
 # Local-Stored DBs.
 ## SQLite.
 *.sqlite
 *.sqlite3
 ## PostgreSQL data.
-**/Services/API/AI/LiteLLM/Postgres/**
-!**/Services/API/AI/LiteLLM/Postgres/.gitkeep
+**/services/api/ai/litellm/postgres/**
+!**/services/api/ai/litellm/postgres/.gitkeep
 
 # Logs.
-**/Logs/**
-!**/Logs/.gitkeep
+**/logs/**
+!**/logs/.gitkeep
 
 # Notifications from Authelia.
 **/notification.txt
 
 # SeaweedFS.
 ## Stored data.
-**/Services/Storages/Seaweed/Data/**
-!**/Services/Storages/Seaweed/Data/.gitkeep
+**/services/storages/seaweed/data/**
+!**/services/storages/seaweed/data/.gitkeep
 ## S3 config.
-**/Services/Storages/Seaweed/config/s3.json
+**/services/storages/seaweed/config/s3.json
 
 # Milvus Vector Storage.
 ## Stored Data.
-**/Services/Storages/Milvus/ETCD/**
-**/Services/Storages/Milvus/MinIO/**
-**/Services/Storages/Milvus/Master/**
-!**/Services/Storages/Milvus/ETCD/.gitkeep
-!**/Services/Storages/Milvus/MinIO/.gitkeep
-!**/Services/Storages/Milvus/Master/.gitkeep
+**/services/storages/milvus/etcd/**
+**/services/storages/milvus/minio/**
+**/services/storages/milvus/master/**
+!**/services/storages/milvus/etcd/.gitkeep
+!**/services/storages/milvus/minio/.gitkeep
+!**/services/storages/milvus/master/.gitkeep
 
 # Environment Data.
 *.env
 
 # Users Declaration File for Authelia.
 ## Use template file instead ("users_database.yml.example")
-**/Services/System/Auth/Authelia/data/users_database.yml
+**/services/system/auth/authelia/data/users_database.yml
 
 # Configuration File for Authelia.
 ## Use template file instead ("configuration.yml.example")
-**/Services/System/Auth/Authelia/configuration.yml
+**/services/system/auth/authelia/configuration.yml
 
 # Windows-Specific Files.
 **/desktop.ini
@@ -55,15 +55,15 @@
 **/**.DS_Store
 
 # SearXNG Service Config.
-**/SearXNG/settings.yml
+**/searxng/settings.yml
 
 # Adapter Configs.
-**/Services/API/AI/Adapters/Voice/config.yml
-**/Services/API/AI/Adapters/Music/config.yml
+**/services/api/ai/adapters/voice/config.yml
+**/services/api/ai/adapters/music/config.yml
 
 # Pipelines Configs.
 ## RAG Ingestion Service config file.
-**/RAG/IngestionService/config.yml
+**/rag/ingestion_service/config.yml
 
 # Backups Storage.
 **/.bak/**

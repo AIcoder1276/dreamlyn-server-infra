@@ -10,8 +10,8 @@ services:
         environment:
             - DOMAIN=${CERT_DOMAIN}
         volumes:
-            - ./System/Servers/NGINX/Logs:/var/log/nginx
-            - ./System/Servers/NGINX/Config/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+            - ./system/servers/nginx/logs:/var/log/nginx
+            - ./system/servers/nginx/config/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
             - server_certbot_data:/etc/letsencrypt
         networks:
             - dreamlyn_infra_internal_network
@@ -22,7 +22,7 @@ services:
         container_name: system-auth_manager
         restart: unless-stopped
         volumes:
-            - ./System/Auth/Authelia:/config
+            - ./system/auth/authelia:/config
         networks:
             - dreamlyn_infra_internal_network
         environment:
@@ -40,7 +40,7 @@ services:
             - POSTGRES_PASSWORD=${DB_PASSWORD}
             - POSTGRES_DB=${DB_NAME}
         volumes:
-            - ./API/AI/LiteLLM/Postgres:/var/lib/postgresql
+            - ./api/ai/litellm/postgres:/var/lib/postgresql
         networks:
             - dreamlyn_infra_internal_network
     ### Control panel.
@@ -52,7 +52,7 @@ services:
             - litellm-postgres
             - milvus-master
         volumes:
-            - ./API/AI/LiteLLM/Master/config.yaml:/app/config.yaml
+            - ./api/ai/litellm/master/config.yaml:/app/config.yaml
         env_file: .env
         environment:
             MILVUS_API_KEY: "${MILVUS_USER_LOGIN}:${MILVUS_USER_PASSWORD}"
@@ -62,15 +62,15 @@ services:
     ## Music request adapter.
     adapter-music:
         build:
-            context: ~/source/repos/adapter-music
+            context: ~/Source/repos/api-music_adapter
         container_name: api-ai-adapters-music
         restart: unless-stopped
         depends_on:
             - swfs-s3
         env_file: .env
         volumes:
-            - ./API/AI/Adapters/Music/Logs:/app/logs
-            - ./API/AI/Adapters/Music/config.yml:/app/config.yml:ro
+            - ./api/ai/adapters/music/logs:/app/logs
+            - ./api/ai/adapters/music/config.yml:/app/config.yml:ro
         environment:
             - S3_STORAGE_PUBLIC_BASE_URL=http://s3.dreamlyn.ru
         networks:
@@ -78,16 +78,16 @@ services:
     ## Voice request adapter.
     adapter-voice:
         build:
-            context: ~/source/repos/adapter-voice
+            context: ~/Source/repos/api-voice_adapter
         container_name: api-ai-adapters-voice
         restart: unless-stopped
         depends_on:
             - swfs-s3
         env_file: .env
         volumes:
-            - ./API/AI/Adapters/Voice/Logs:/app/logs
-            - ./API/AI/Adapters/Voice/Cache:/app/cache
-            - ./API/AI/Adapters/Voice/config.yml:/app/config.yml:ro
+            - ./api/ai/adapters/voice/logs:/app/logs
+            - ./api/ai/adapters/voice/cache:/app/cache
+            - ./api/ai/adapters/voice/config.yml:/app/config.yml:ro
         networks:
             - dreamlyn_infra_internal_network
 
@@ -113,7 +113,7 @@ services:
         depends_on:
             - swfs-master
         volumes:
-            - ./Storages/Seaweed/Data:/data
+            - ./storages/seaweed/data:/data
         command: >
             volume 
             -mserver=swfs-master:9333 
@@ -150,7 +150,7 @@ services:
         environment:
             - SEAWEEDFS_S3_ALLOWED_DOMAINS=${CERT_DOMAIN}
         volumes:
-            - ./Storages/Seaweed/Config/s3.json:/etc/seaweedfs/s3.json
+            - ./storages/seaweed/config/s3.json:/etc/seaweedfs/s3.json
         command: >
             s3 
             -filer=swfs-filer:8888
@@ -169,8 +169,12 @@ services:
             - ETCD_QUOTA_BACKEND_BYTES=4294967296
             - ETCD_SNAPSHOT_COUNT=8
         volumes:
-            - ./Storages/Milvus/ETCD:/etcd
-        command: etcd -advertise-client-urls=http://milvus-etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+            - ./storages/milvus/etcd:/etcd
+        command: >
+            etcd 
+            -advertise-client-urls=http://milvus-etcd:2379 
+            -listen-client-urls http://0.0.0.0:2379 
+            --data-dir /etcd
         networks:
             - dreamlyn_infra_internal_network
     milvus-minio:
@@ -180,8 +184,11 @@ services:
             MINIO_ACCESS_KEY: minioadmin
             MINIO_SECRET_KEY: minioadmin
         volumes:
-            - ./Storages/Milvus/MinIO:/minio_data
-        command: minio server /minio_data --console-address ":9001"
+            - ./storages/milvus/minio:/minio_data
+        command: >
+            minio server 
+            /minio_data 
+            --console-address ":9001"
         networks:
             - dreamlyn_infra_internal_network
     milvus-master:
@@ -197,7 +204,7 @@ services:
             COMMON_SECURITY_AUTHORIZATIONENABLED: true
             COMMON_SECURITY_DEFAULTROOTPASSWORD: ${MILVUS_ROOT_PASSWORD}
         volumes:
-            - ./Storages/Milvus/Master:/var/lib/milvus
+            - ./storages/milvus/master:/var/lib/milvus
         depends_on:
             - milvus-etcd
             - milvus-minio
@@ -218,14 +225,14 @@ services:
 
     rag-ingestion_service:
         build:
-            context: ~/source/repos/rag-ingestion_service
+            context: ~/Source/repos/rag-ingestion_service
             dockerfile: Dockerfile
         container_name: pipeline-rag-ingestion_service
         restart: unless-stopped
         volumes:
-            - ./Pipelines/RAG/IngestionService/config.yml:/app/config.yml:ro
+            - ./pipelines/rag/ingestion_service/config.yml:/app/config.yml:ro
         env_file:
-            - ./Pipelines/RAG/IngestionService/.env
+            - ./pipelines/rag/ingestion_service/.env
         expose:
             - "8000"
         networks:

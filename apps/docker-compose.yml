@@ -5,21 +5,21 @@ services:
         container_name: landing_page
         restart: unless-stopped
         volumes:
-            - ./Landing:/usr/share/nginx/html:ro
+            - ./landing:/usr/share/nginx/html:ro
         networks:
             - dreamlyn_infra_internal_network
 
     # Project management system.
     youtrack:
-        image: jetbrains/youtrack:2025.3.128064
+        image: jetbrains/youtrack:2026.2.17012
         container_name: jetbrains_youtrack
         restart: unless-stopped
         volumes:
-            - ./YouTrack/Data:/opt/youtrack/data
-            - ./YouTrack/Conf:/opt/youtrack/conf
-            - ./YouTrack/Logs:/opt/youtrack/logs
-            - ./YouTrack/Temp:/opt/youtrack/temp
-            - ./YouTrack/Backups:/opt/youtrack/backups
+            - ./youtrack/data:/opt/youtrack/data
+            - ./youtrack/conf:/opt/youtrack/conf
+            - ./youtrack/logs:/opt/youtrack/logs
+            - ./youtrack/temp:/opt/youtrack/temp
+            - ./youtrack/backups:/opt/youtrack/backups
         networks:
             - dreamlyn_infra_internal_network
         environment:
@@ -30,4 +30,3 @@ networks:
   dreamlyn_infra_internal_network:
     external: true
     name: dreamlyn_mesh
-
