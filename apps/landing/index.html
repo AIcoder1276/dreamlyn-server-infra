@@ -1,23 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
     <head>
         <meta charset="utf-8">
         <title>Проект Dreamlyn</title>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: Arial, sans-serif;
+            }
+
+            body {
+                min-height: 100vh;
+                margin: 0;
+                display: grid;
+                place-items: center;
+                background: #0f172a;
+                color: #e5e7eb;
+            }
+
+            main {
+                width: min(42rem, calc(100% - 2rem));
+                text-align: center;
+            }
+
+            .warning {
+                margin-bottom: 2rem;
+                padding: 1rem;
+                border: 1px solid #fbbf24;
+                border-radius: 6px;
+                background: #422006;
+                color: #fef3c7;
+                line-height: 1.5;
+                text-align: left;
+            }
+
+            .warning strong {
+                display: block;
+                margin-bottom: 0.25rem;
+                color: #fde68a;
+            }
+        </style>
     </head>
 
-    <body style="
-        background:#0f172a;
-        color:#e5e7eb;
-        font-family:sans-serif;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        height:100vh;
-        margin:0;"
-    >
-        <div style="text-align:center">
+    <body>
+        <main>
+            <div id="http-warning" class="warning" role="alert" hidden>
+                <strong>Соединение не защищено</strong>
+                TLS-сертификат временно недоступен. Не передавайте через сайт конфиденциальные данные и сообщите об этой проблеме системному администратору или DevOps-инженеру.
+            </div>
+
+            <noscript>
+                <div class="warning" role="alert">
+                    <strong>Не удалось проверить защищённость соединения</strong>
+                    JavaScript недоступен. Убедитесь, что адрес начинается с <code>https://</code>. Если защищённое соединение недоступно, сообщите системному администратору или DevOps-инженеру.
+                </div>
+            </noscript>
+
             <h1>🚧 В РАЗРАБОТКЕ 🚧</h1>
             <p>Страница проекта будет наполнена позднее.</p>
-        </div>
+        </main>
+
+        <script>
+            if (window.location.protocol === "http:") {
+                document.getElementById("http-warning").hidden = false;
+            }
+        </script>
     </body>
 </html>
