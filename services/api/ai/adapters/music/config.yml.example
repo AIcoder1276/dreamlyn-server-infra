@@ -15,6 +15,6 @@ folders:
 generation:
   duration_seconds:
     min: 5
-    max: 7
+    max: 30
     default: 6
   default_format: wav

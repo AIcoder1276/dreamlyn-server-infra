@@ -13,6 +13,10 @@
 ## PostgreSQL data.
 **/services/api/ai/litellm/postgres/**
 !**/services/api/ai/litellm/postgres/.gitkeep
+**/apps/poetry/db/data/**
+!**/apps/poetry/db/data/.gitkeep
+**/apps/poetry/db/backups/**
+!**/apps/poetry/db/backups/.gitkeep
 
 # Logs.
 **/logs/**
@@ -45,6 +49,9 @@
 
 # Environment Data.
 *.env
+
+# Poetry Runtime Configuration.
+**/apps/poetry/frontend/config.yaml
 
 # Users Declaration File for Authelia.
 ## Use template file instead ("users_database.yml.example")

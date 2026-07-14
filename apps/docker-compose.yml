@@ -25,6 +25,73 @@ services:
         environment:
             - YOUTRACK_BASE_URL=http://track.dreamlyn.ru
 
+    # Poetry application.
+    ## PostgreSQL metadata storage.
+    app-poetry-postgres:
+        image: postgres:18-alpine
+        container_name: app-poetry-postgres
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${POETRY_DB_USER:?POETRY_DB_USER must be set}
+            POSTGRES_PASSWORD: ${POETRY_DB_PASSWORD:?POETRY_DB_PASSWORD must be set}
+            POSTGRES_DB: ${POETRY_DB_NAME:?POETRY_DB_NAME must be set}
+        volumes:
+            - ./poetry/db/data:/var/lib/postgresql
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+            interval: 10s
+            timeout: 5s
+            start_period: 20s
+            retries: 5
+        networks:
+            - dreamlyn_infra_internal_network
+    ## API.
+    poetry-backend:
+        build:
+            context: ~/Source/repos/app-poetry-backend
+        container_name: poetry-backend
+        restart: unless-stopped
+        init: true
+        depends_on:
+            app-poetry-postgres:
+                condition: service_healthy
+        environment:
+            DATABASE_URL: ${POETRY_DATABASE_URL:?POETRY_DATABASE_URL must be set}
+            JWT_SECRET: ${POETRY_JWT_SECRET:?POETRY_JWT_SECRET must be set}
+            JWT_ALGORITHM: ${POETRY_JWT_ALGORITHM:-HS256}
+            ACCESS_TOKEN_MINUTES: ${POETRY_ACCESS_TOKEN_MINUTES:-15}
+            REFRESH_TOKEN_DAYS: ${POETRY_REFRESH_TOKEN_DAYS:-30}
+            REFRESH_COOKIE_NAME: ${POETRY_REFRESH_COOKIE_NAME:-poetry_refresh_token}
+            REFRESH_COOKIE_DOMAIN: ${POETRY_REFRESH_COOKIE_DOMAIN:?POETRY_REFRESH_COOKIE_DOMAIN must be set}
+            REFRESH_COOKIE_SECURE: ${POETRY_REFRESH_COOKIE_SECURE:-true}
+            REFRESH_COOKIE_SAMESITE: ${POETRY_REFRESH_COOKIE_SAMESITE:-lax}
+            ADMIN_DOCS_USERNAME: ${POETRY_ADMIN_DOCS_USERNAME:?POETRY_ADMIN_DOCS_USERNAME must be set}
+            ADMIN_DOCS_PASSWORD: ${POETRY_ADMIN_DOCS_PASSWORD:?POETRY_ADMIN_DOCS_PASSWORD must be set}
+            CORS_ALLOWED_ORIGINS: '${POETRY_CORS_ALLOWED_ORIGINS:?POETRY_CORS_ALLOWED_ORIGINS must be set}'
+            LITELLM_BASE_URL: ${POETRY_LITELLM_BASE_URL:-http://litellm-master:4000}
+            LITELLM_MODEL: ${POETRY_LITELLM_MODEL:-timur}
+            GENERATION_TIMEOUT_SECONDS: ${POETRY_GENERATION_TIMEOUT_SECONDS:-300}
+            S3_DOWNLOAD_TIMEOUT_SECONDS: ${POETRY_S3_DOWNLOAD_TIMEOUT_SECONDS:-120}
+            GENERATION_MIN_DURATION_SECONDS: ${POETRY_GENERATION_MIN_DURATION_SECONDS:-5}
+            GENERATION_MAX_DURATION_SECONDS: ${POETRY_GENERATION_MAX_DURATION_SECONDS:-30}
+            GENERATION_MAX_PROMPT_LENGTH: ${POETRY_GENERATION_MAX_PROMPT_LENGTH:-4000}
+        expose:
+            - "8000"
+        networks:
+            - dreamlyn_infra_internal_network
+    ## Web-client.
+    poetry-frontend:
+        build:
+            context: ~/Source/repos/app-poetry-frontend
+        container_name: poetry-frontend
+        restart: unless-stopped
+        volumes:
+            - ./poetry/frontend/config.yaml:/usr/share/nginx/html/config.yaml:ro
+        expose:
+            - "8080"
+        networks:
+            - dreamlyn_infra_internal_network
+
 
 networks:
   dreamlyn_infra_internal_network:

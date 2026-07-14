@@ -26,7 +26,10 @@ server {
         attu.${DOMAIN}
         api-milvus.${DOMAIN}
         track.${DOMAIN}
-        api-ai.${DOMAIN};
+        api-ai.${DOMAIN}
+        poetry.${DOMAIN}
+        api-poetry.${DOMAIN}
+        admin-poetry.${DOMAIN};
 
     return 301 https://$host$request_uri;
 }
@@ -228,5 +231,117 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_read_timeout 300;
+    }
+}
+
+# Dreamlyn Poetry browser application.
+server {
+    listen 443 ssl;
+    server_name poetry.${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    include /etc/nginx/snippets/service-unavailable.conf;
+
+    location / {
+        set $poetry_frontend_upstream poetry-frontend:8080;
+        proxy_pass http://$poetry_frontend_upstream;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# Dreamlyn Poetry public API.
+server {
+    listen 443 ssl;
+    server_name api-poetry.${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    client_max_body_size 1M;
+    include /etc/nginx/snippets/service-unavailable.conf;
+
+    location ^~ /admin/ {
+        return 404;
+    }
+
+    location = /admin {
+        return 404;
+    }
+
+    location / {
+        set $poetry_backend_upstream poetry-backend:8000;
+        proxy_pass http://$poetry_backend_upstream;
+
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 330s;
+        proxy_send_timeout 330s;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header Range $http_range;
+        proxy_set_header If-Range $http_if_range;
+    }
+}
+
+# Dreamlyn Poetry administration API and Swagger UI.
+server {
+    listen 443 ssl;
+    server_name admin-poetry.${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    include /etc/nginx/snippets/service-unavailable.conf;
+    error_page 401 =302 $scheme://auth.${DOMAIN}/?rd=$scheme://$http_host$request_uri;
+
+    location = /admin {
+        return 301 /admin/;
+    }
+
+    location ^~ /admin/ {
+        auth_request /authelia;
+
+        set $poetry_admin_upstream poetry-backend:8000;
+        proxy_pass http://$poetry_admin_upstream;
+
+        proxy_http_version 1.1;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 330s;
+        proxy_send_timeout 330s;
+
+        proxy_set_header Cookie $cleaned_cookies;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+    }
+
+    location = /authelia {
+        internal;
+        set $authelia_verify_upstream authelia:9091;
+        proxy_pass http://$authelia_verify_upstream/api/verify;
+        proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Authorization "";
+        proxy_set_header Content-Length "";
+        proxy_set_header Connection "";
+    }
+
+    location / {
+        return 404;
     }
 }
