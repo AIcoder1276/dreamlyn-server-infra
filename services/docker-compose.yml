@@ -75,7 +75,7 @@ services:
             - ./api/ai/adapters/music/logs:/app/logs
             - ./api/ai/adapters/music/config.yml:/app/config.yml:ro
         environment:
-            - S3_STORAGE_PUBLIC_BASE_URL=http://s3.dreamlyn.ru
+            - S3_STORAGE_PUBLIC_BASE_URL=https://s3.dreamlyn.ru
         networks:
             - dreamlyn_infra_internal_network
     ## Voice request adapter.

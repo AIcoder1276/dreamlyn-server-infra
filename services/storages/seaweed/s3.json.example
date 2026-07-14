@@ -5,7 +5,7 @@
       "credentials": [
         {
           "accessKey": "admin",
-          "secretKey": "dreamlyn_from_the_dreaming_lands"
+          "secretKey": "{PWD}"
         }
       ],
       "actions": ["Read", "Write", "List", "Tagging", "Admin"]

@@ -32,9 +32,13 @@ From the infrastructure repository root:
    apiBaseUrl: https://api-poetry.example.com
    ```
 
-3. In `services/api/ai/adapters/music/config.yml`, set the production generation range to `5..30`
+3. Add a dedicated `poetry-backend` identity to `services/storages/seaweed/s3.json` using the
+   `Read:dreamlyn-music` action from `services/storages/seaweed/s3.json.example`. Put the same
+   access and secret keys into `POETRY_S3_ACCESS_KEY` and `POETRY_S3_SECRET_KEY` in `apps/.env`.
+   Do not add anonymous read access to the music bucket.
+4. In `services/api/ai/adapters/music/config.yml`, set the production generation range to `5..30`
    seconds, matching its committed example and the Poetry API contract.
-4. Add `admin-poetry.${DOMAIN}` to the same Authelia `two_factor` access-control rule used by the
+5. Add `admin-poetry.${DOMAIN}` to the same Authelia `two_factor` access-control rule used by the
    existing protected services. Do not expose the Poetry administration routes without Authelia.
 
 The real `.env`, frontend `config.yaml`, PostgreSQL data and database dumps are ignored by Git.
@@ -78,7 +82,8 @@ Run these steps on the production server only. They are not local-development co
 
    ```sh
    docker compose --env-file apps/.env -f apps/docker-compose.yml up -d poetry-backend poetry-frontend
-   docker compose --env-file services/.env -f services/docker-compose.yml restart adapter-music
+   docker compose --env-file services/.env -f services/docker-compose.yml up -d --force-recreate \
+     swfs-s3 adapter-music
    docker compose --env-file services/.env -f services/docker-compose.yml restart server
    ```
 
@@ -130,4 +135,3 @@ tables and expected row counts, then drop only that temporary database. For an a
 stop `poetry-backend`, preserve the failed database separately, restore the pre-deployment dump into
 a clean database, and start the backend only after `/health/ready` succeeds. Do not use an automatic
 `alembic downgrade` as the production rollback mechanism.
-
