@@ -9,7 +9,8 @@ to Docker Compose through build-context variables.
 ```text
 poetry.${DOMAIN}       -> server/nginx -> poetry-frontend:8080
 api-poetry.${DOMAIN}   -> server/nginx -> poetry-backend:8000
-admin-poetry.${DOMAIN} -> Authelia     -> poetry-backend:8000/admin/*
+admin-poetry.${DOMAIN} -> Authelia     -> poetry-backend:8000/admin/docs
+                                      -> poetry-backend:8000/admin/*
                                            |
                                            +-> app-poetry-postgres:5432
                                            +-> litellm-master:4000
@@ -104,7 +105,8 @@ Then verify externally:
 - `https://poetry.${DOMAIN}` loads the SPA and its `/config.yaml` points to the public API host.
 - `https://api-poetry.${DOMAIN}/health/live` and `/health/ready` return `200`.
 - `/admin/*` returns `404` on the API host.
-- `https://admin-poetry.${DOMAIN}/admin/docs` requires Authelia and then the backend Basic Auth.
+- `https://admin-poetry.${DOMAIN}/` opens Swagger and requires Authelia followed by backend Basic Auth.
+- The previous `/admin/docs` address and all `/admin/api/v1/*` routes remain available.
 - Registration, login, refresh-cookie rotation and logout work from the frontend origin.
 - Music generation works at both 5 and 30 seconds for MP3 and WAV.
 - An audio request with a `Range` header returns `206` with `Content-Range` and `Accept-Ranges`.
