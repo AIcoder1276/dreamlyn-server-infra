@@ -27,9 +27,9 @@ services:
 
     # Poetry application.
     ## PostgreSQL metadata storage.
-    app-poetry-postgres:
+    poetry-db:
         image: postgres:18-alpine
-        container_name: app-poetry-postgres
+        container_name: poetry-db
         restart: unless-stopped
         environment:
             POSTGRES_USER: ${POETRY_DB_USER:?POETRY_DB_USER must be set}
@@ -53,7 +53,7 @@ services:
         restart: unless-stopped
         init: true
         depends_on:
-            app-poetry-postgres:
+            poetry-db:
                 condition: service_healthy
         environment:
             DATABASE_URL: ${POETRY_DATABASE_URL:?POETRY_DATABASE_URL must be set}
