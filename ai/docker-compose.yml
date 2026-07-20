@@ -1,9 +1,9 @@
 services:
     # AI inferences.
     ## Multimodal AI services.
-    ai-multimodal-qwen3.5_9b:
+    ai-multimodal-main:
         image: vllm/vllm-openai:latest
-        container_name: inference-multimodal-qwen3.5_9b
+        container_name: inference-multimodal-main
         restart: unless-stopped
         ipc: host
         gpus: all
@@ -12,20 +12,17 @@ services:
         environment:
             - NVIDIA_VISIBLE_DEVICES=all
         command: >
-            cyankiwi/Qwen3.5-9B-AWQ-4bit
-            --served-model-name Qwen/Qwen3.5-9B
+            AxionML/Qwen3.5-4B-NVFP4
+            --served-model-name Qwen/Qwen3.5-4B-NVFP4
             --max-model-len 8192
-            --gpu-memory-utilization 0.48
-            --cpu-offload-gb 8
             --enforce-eager
+            --gpu-memory-utilization 0.475
             --kv-cache-dtype fp8
             --enable-chunked-prefill
             --enable-prefix-caching
             --limit-mm-per-prompt '{"image": 1}'
             --mm-processor-kwargs '{"max_pixels": 314572}'
             --reasoning-parser qwen3
-            --tool-call-parser qwen3_coder
-            --enable-auto-tool-choice
             --generation-config vllm
         networks:
             - dreamlyn_infra_internal_network
@@ -78,9 +75,10 @@ services:
         command: >
             Qwen/Qwen3-Embedding-0.6B
             --served-model-name Qwen/Qwen3-Embedding-0.6B
-            --max-model-len 8192
-            --gpu-memory-utilization 0.15
-            --cpu-offload-gb 0.5
+            --max-model-len 2048
+            --enforce-eager
+            --gpu-memory-utilization 0.055
+            --cpu-offload-gb 1
         networks:
             - dreamlyn_infra_internal_network
 

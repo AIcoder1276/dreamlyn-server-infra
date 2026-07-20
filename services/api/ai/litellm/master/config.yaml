@@ -7,13 +7,13 @@ model_list:
     # Multimodal models.
     - model_name: tzeentch
       litellm_params:
-          model: openai/Qwen/Qwen3.5-9B
-          api_base: http://ai-multimodal-qwen3.5_9b:8000/v1
+          model: openai/Qwen/Qwen3.5-4B-NVFP4
+          api_base: http://ai-multimodal-main:8000/v1
           api_key: "not-needed-locally"
     - model_name: tzeentch-instant
       litellm_params:
-          model: openai/Qwen/Qwen3.5-9B
-          api_base: http://ai-multimodal-qwen3.5_9b:8000/v1
+          model: openai/Qwen/Qwen3.5-4B-NVFP4
+          api_base: http://ai-multimodal-main:8000/v1
           api_key: "not-needed-locally"
           temperature: 0.7
           top_p: 0.8
