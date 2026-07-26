@@ -1,0 +1,15 @@
+hospitalName: 'ГБУЗ РБ ГКБ №5 г. Уфа'
+doctorName: ''
+shiftBeginning:
+    dayOffset: -1
+    time: '18:00'
+shiftEnding:
+    dayOffset: 0
+    time: '08:00'
+patients:
+    - name: ''
+      birthdate: ''
+      complaint: ''
+      metrics: ''
+      notes: ''
+      appliedHelp: ''

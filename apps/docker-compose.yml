@@ -97,6 +97,18 @@ services:
         networks:
             - dreamlyn_infra_internal_network
 
+    # ASR app.
+    after_shift_reporter:
+        build:
+            context: ~/Source/repos/app-after_shift_reporter
+        container_name: after_shift_reporter
+        restart: unless-stopped
+        volumes:
+            - ./after_shift_reporter/config/config.yml:/usr/share/nginx/html/config.yml:ro
+        expose:
+            - "8080"
+        networks:
+            - dreamlyn_infra_internal_network
 
 networks:
   dreamlyn_infra_internal_network:

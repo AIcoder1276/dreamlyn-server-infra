@@ -29,7 +29,8 @@ server {
         api-ai.${DOMAIN}
         poetry.${DOMAIN}
         api-poetry.${DOMAIN}
-        admin-poetry.${DOMAIN};
+        admin-poetry.${DOMAIN}
+	asr.${DOMAIN};
 
     return 301 https://$host$request_uri;
 }
@@ -357,6 +358,28 @@ server {
     location / {
         set $poetry_frontend_upstream poetry-frontend:8080;
         proxy_pass http://$poetry_frontend_upstream;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# After-Shift Reporter application.
+server {
+    listen 443 ssl;
+    server_name asr.${DOMAIN};
+    
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    include /etc/nginx/snippets/service-unavailable.conf;
+
+    location / {
+        set $after_shift_reporter_upstream after-shift-reporter:8080;
+        proxy_pass http://$after_shift_reporter_upstream;
 
         proxy_http_version 1.1;
         proxy_set_header Host $host;
