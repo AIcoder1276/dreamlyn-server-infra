@@ -11,7 +11,7 @@ services:
 
     # Project management system.
     youtrack:
-        image: jetbrains/youtrack:2026.2.17012
+        image: jetbrains/youtrack:2026.2.18194
         container_name: jetbrains_youtrack
         restart: unless-stopped
         volumes:
