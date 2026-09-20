@@ -246,7 +246,7 @@ services:
         networks:
             - dreamlyn_infra_internal_network
     milvus-webui:
-        image: zilliz/attu:v3.0.0-beta.6
+        image: zilliz/attu:latest
         container_name: storage-milvus-web_ui
         environment:
             - MILVUS_ADDRESS=milvus-master:19530
