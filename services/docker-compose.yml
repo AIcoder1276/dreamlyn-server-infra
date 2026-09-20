@@ -12,6 +12,7 @@ services:
             - DOMAIN=${CERT_DOMAIN}
         volumes:
             - ./system/servers/nginx/logs:/var/log/nginx
+            - ./system/servers/nginx/config/nginx.conf:/etc/nginx/nginx.conf:ro
             - ./system/servers/nginx/config/templates:/etc/nginx/templates:ro
             - ./system/servers/nginx/config/snippets:/etc/nginx/snippets:ro
             - ./system/servers/nginx/entrypoint/select-mode.sh:/etc/nginx/entrypoint/select-mode.sh:ro
