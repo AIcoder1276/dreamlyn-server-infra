@@ -23,7 +23,7 @@ services:
         networks:
             - dreamlyn_infra_internal_network
         environment:
-            - YOUTRACK_BASE_URL=http://track.dreamlyn.ru
+            - YOUTRACK_BASE_URL=https://track.dreamlyn.ru
 
     # Poetry application.
     ## PostgreSQL metadata storage.
