@@ -59,6 +59,7 @@ services:
         env_file: .env
         environment:
             MILVUS_API_KEY: "${MILVUS_USER_LOGIN}:${MILVUS_USER_PASSWORD}"
+            LITELLM_DISABLE_NO_REDIS_WARNING: true
         command: ["--config", "/app/config.yaml"]
         networks:
             - dreamlyn_infra_internal_network
@@ -192,7 +193,7 @@ services:
         networks:
             - dreamlyn_infra_internal_network
     milvus-minio:
-        image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+        image: minio/minio:RELEASE.2024-05-28T17-19-04Z
         container_name: storage-milvus-minio
         restart: unless-stopped
         environment:
@@ -212,7 +213,7 @@ services:
         networks:
             - dreamlyn_infra_internal_network
     milvus-master:
-        image: milvusdb/milvus:v3.0-beta
+        image: milvusdb/milvus:v3.0.0
         container_name: storage-milvus-master
         restart: unless-stopped
         command: ["milvus", "run", "standalone"]
