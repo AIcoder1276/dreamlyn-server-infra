@@ -72,12 +72,14 @@ services:
         restart: unless-stopped
         depends_on:
             - swfs-s3
-        env_file: .env
         volumes:
             - ./api/ai/adapters/music/logs:/app/logs
             - ./api/ai/adapters/music/config.yml:/app/config.yml:ro
+        # Only the S3 music credentials: the adapter must not see other secrets from .env.
         environment:
             - S3_STORAGE_PUBLIC_BASE_URL=https://s3.dreamlyn.ru
+            - STORAGE_MUSIC_USER_LOGIN=${STORAGE_MUSIC_USER_LOGIN}
+            - STORAGE_MUSIC_USER_PASSWORD=${STORAGE_MUSIC_USER_PASSWORD}
         networks:
             - dreamlyn_infra_internal_network
     ## Voice request adapter.
@@ -88,11 +90,14 @@ services:
         restart: unless-stopped
         depends_on:
             - swfs-s3
-        env_file: .env
         volumes:
             - ./api/ai/adapters/voice/logs:/app/logs
             - ./api/ai/adapters/voice/cache:/app/cache
             - ./api/ai/adapters/voice/config.yml:/app/config.yml:ro
+        # Only the S3 voice credentials: the adapter must not see other secrets from .env.
+        environment:
+            - STORAGE_VOICE_USER_LOGIN=${STORAGE_VOICE_USER_LOGIN}
+            - STORAGE_VOICE_USER_PASSWORD=${STORAGE_VOICE_USER_PASSWORD}
         networks:
             - dreamlyn_infra_internal_network
 
